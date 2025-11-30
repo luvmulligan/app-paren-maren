@@ -13,6 +13,11 @@ export class App implements OnInit{
   protected readonly currentPlayer = signal('');
   public dice = signal<number[]>([]);
   public last = signal<number | null>(null);
+  public canParenMaren = signal<boolean | null>(false);
+  public multiplier = signal<number | undefined>(1);
+  public parenMarenPressed = signal<boolean | undefined>(false);
+  public blackDiceUrl: string= '';
+
   public rollResult!: number;
   
   // roomId: string;
@@ -38,18 +43,40 @@ export class App implements OnInit{
     });
     this.rt.lastRollChanges().subscribe(last => {
       this.last.set(last);
-      console.log(last)
     });
+    this.rt.canParenMaren().subscribe(value =>{
+      this.canParenMaren.set(value)
+    })
       this.rt.startGame().then((data)=>{
     });
+    this.rt.parenMarenPressed().subscribe((value)=>{
+      this.parenMarenPressed.set(value!)
+    })
+    this.rt.multiplier().subscribe((value)=>{
+      this.multiplier.set(value!)
+      
+    })
+    
+    this.rt.roomChanges().subscribe((data)=>{
+      console.log(data)
+      this.blackDiceUrl = `assets/black-dice-${this.multiplier()}.png`
+
+    })
     }
 
     rollDice(){
+      if(this.dice().length === 4){
+        this.rt.endTurn();
+      };
       this.rt.rollDice().then((data)=>{
-        console.log(data.dice)
       });
     }
     leaveRoom(){
       this.rt.leaveRoom();
+    }
+
+    rollParenMaren(){
+      this.rt.rollParenMaren()
+      console.log(this.parenMarenPressed())
     }
 }

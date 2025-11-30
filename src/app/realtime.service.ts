@@ -8,6 +8,7 @@ export interface PlayerDto {
   name: string;
   ready: boolean;
   connected: boolean;
+  score: number;
 }
 
 export interface RoomDto {
@@ -19,6 +20,10 @@ export interface RoomDto {
   turnIndex: number;
   dice: number[];
   phase: 'lobby' | 'playing' | 'ended';
+  canParenMaren: boolean;
+  parenMarenPressed: boolean;
+  multiplier: number;
+
 }
 
 export interface JoinPayload {
@@ -36,6 +41,10 @@ export class RealtimeService implements OnDestroy {
   private lastError$ = new BehaviorSubject<string | null>(null);
   private diceView$ = new BehaviorSubject<number[]>([]);
   private lastRoll$ = new BehaviorSubject<number | null>(null);
+  private canParenMaren$ = new BehaviorSubject<boolean | null>(null);
+  private parenMarenPressed$ = new BehaviorSubject<boolean | null>(false);
+  private multiplier$ = new BehaviorSubject<number | null>(1);
+
 
   // Adjust the URL if your server runs elsewhere
   private readonly serverUrl = 'http://localhost:3000';
@@ -107,6 +116,18 @@ export class RealtimeService implements OnDestroy {
     return this.lastRoll$.asObservable();
   }
 
+   canParenMaren(): Observable<boolean | null> {
+    return this.canParenMaren$.asObservable();
+  }
+
+    parenMarenPressed(): Observable<boolean | null> {
+    return this.parenMarenPressed$.asObservable();
+  }
+
+   multiplier(): Observable<number | null> {
+    return this.multiplier$.asObservable();
+  }
+
   // Actions
   joinRoom(payload: JoinPayload): Promise<{ ok: boolean; room?: RoomDto; error?: string }> {
     this.ensureSocket();
@@ -150,6 +171,25 @@ export class RealtimeService implements OnDestroy {
           if (ack?.ok) {
             if (Array.isArray(ack.dice)) this.diceView$.next([...(ack.dice as number[])]);
             if (typeof ack.last === 'number') this.lastRoll$.next(ack.last);
+            if (ack.canParenMaren) this.canParenMaren$.next(ack.canParenMaren)
+          } else if (ack?.error) {
+            this.lastError$.next(ack.error);
+          }
+          resolve(ack);
+        });
+      });
+    });
+  }
+
+  rollParenMaren(faces = 6): Promise<{ ok: boolean; canParenMaren?: boolean; parenMarenPressed?: boolean; multiplier?: number; error?: string }> {
+    this.ensureSocket();
+    return new Promise((resolve) => {
+      this.socket!.emit('rollParenMaren', { faces }, (ack: any) => {
+        this.zone.run(() => {
+          if (ack?.ok) {
+            if (Array.isArray(ack.dice)) this.diceView$.next([...(ack.dice as number[])]);
+            if(ack.parenMarenPressed) this.parenMarenPressed$.next(ack.parenMarenPressed);
+            if (ack.multiplier) this.multiplier$.next(ack.multiplier);
           } else if (ack?.error) {
             this.lastError$.next(ack.error);
           }

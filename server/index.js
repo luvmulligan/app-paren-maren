@@ -28,7 +28,7 @@ function createRoom(roomId, host) {
     dice: [],
     rollResult: 0,
     multiplier: 1,
-    blackDiceRolled: false,
+    parenMarenPressed: false,
     canParenMaren: false,
     canRoll: false,
     phase: 'lobby', // lobby | playing | ended
@@ -104,35 +104,26 @@ function rollDice(roomId, playerId, _diceCount = 1, faces = 6) {
   if (currentPlayerId(room) !== playerId) throw new Error("Not this player's turn");
   const roll = 1 + Math.floor(Math.random() * faces);
   if (!Array.isArray(room.dice)) room.dice = [];
+    if(roll >= 4){
+    room.canParenMaren = true;
+  }else{
+    room.canParenMaren = false;
+  }
   room.dice.push(roll);
+
   return room;
 }
 
-  // rollDice() {
-  //   this.blackDice = 1;
-  //   this.blackDiceRolled = false;
-  //   this.playSound();
-  //   this.currentPlayer = this.gameBoard.players[this.gameBoard.currentTurn].name;
+function rollParenMaren(roomId, playerId, _diceCount = 1, faces = 6){
+  const room = getRoom(roomId);
+  room.parenMarenPressed = true;
+  const roll = 1 + Math.floor(Math.random() * faces);
+  room.multiplier = roll;
+  room.canParenMaren = false;
 
-  //   if (this.turnDices.length === 4 || this.gameBoard.players.length === 0) {
-  //     return;
-  //   } else {
-  //     let rollDice = Math.floor(Math.random() * (6 - 1 + 1) + 1);
-  //     this.turnDices.push({ rollResult: rollDice });
+  return room;
+}
 
-  //     if (rollDice >= 4) {
-  //       this.canParenMaren = true;
-  //       this.canRoll = true;
-  //     }
-  //     if (rollDice < 4 || this.turnDices.length > 4) {
-  //       this.canParenMaren = false;
-  //       this.canRoll = false;
-  //       setTimeout(() => {
-  //         this.switchTurn();
-  //       }, 2000);
-  //     }
-  //   }
-  // }
 
 function endTurn(roomId, playerId) {
   const room = getRoom(roomId);
@@ -141,6 +132,7 @@ function endTurn(roomId, playerId) {
   if (room.turnOrder.length === 0) return room;
   room.turnIndex = (room.turnIndex + 1) % room.turnOrder.length;
   room.dice = [];
+  room.canParenMaren = false;
   return room;
 }
 
@@ -154,6 +146,9 @@ function snapshotRoom(room) {
     turnIndex: room.turnIndex,
     dice: room.dice.slice(),
     phase: room.phase,
+    canParenMaren: room.canParenMaren,
+    parenMarenPressed: room.parenMarenPressed,
+    multiplier: room.multiplier
   };
 }
 
@@ -211,17 +206,35 @@ io.on('connection', (socket) => {
 
   socket.on('rollDice', (payload, ack) => {
     try {
-      const { faces = 6 } = payload || {};
+      const { faces = 6 , canParenMaren} = payload || {};
       const { roomId, playerId } = socket.data;
-      const room = rollDice(roomId, playerId, 1, faces);
+      const room = rollDice(roomId, playerId, 1, faces, canParenMaren);
+      
       io.to(roomId).emit('roomUpdated', snapshotRoom(room));
-      ack && ack({ ok: true, last: room.dice[room.dice.length - 1], dice: room.dice });
+      ack && ack({ ok: true, last: room.dice[room.dice.length - 1], dice: room.dice, canParenMaren: room.canParenMaren });
     } catch (err) {
       const message = err && err.message ? err.message : 'Unknown error';
       ack && ack({ ok: false, error: message });
       socket.emit('errorMessage', message);
     }
   });
+
+    socket.on('rollParenMaren', (payload, ack) => {
+    try {
+      const { faces = 6 , canParenMaren} = payload || {};
+      const { roomId, playerId } = socket.data;
+      const room = rollParenMaren(roomId, playerId, 1, faces, canParenMaren, parenMarenPressed, multiplier);
+      
+      io.to(roomId).emit('roomUpdated', snapshotRoom(room));
+      ack && ack({ ok: true, last: room.dice[room.dice.length - 1], dice: room.dice, canParenMaren: room.canParenMaren, parenMarenPressed: room.parenMarenPressed, multiplier: room.multiplier });
+    } catch (err) {
+      const message = err && err.message ? err.message : 'Unknown error';
+      ack && ack({ ok: false, error: message });
+      socket.emit('errorMessage', message);
+    }
+  });
+
+
 
   socket.on('endTurn', (ack) => {
     try {

@@ -14,11 +14,21 @@
   <section class="dice-list">
     <h3>Tiradas actuales</h3>
     <ng-container *ngIf="dice().length; else noDice">
-        <div *ngFor="let d of dice(); let i = index"> {{ d }}</div>
+      <div class="dice-container">
+      <div *ngFor="let d of dice(); let i = index">
+        <img [src]="'assets/dice' + d + '.png'" [alt]="" />
+      </div>
+      </div>
+      <div class="paren-maren-button">
+        <button *ngIf="canParenMaren()" (click)="rollParenMaren()">Paren Maren</button>
+      </div>
+        <div class="multiplier-container" *ngIf="parenMarenPressed()">
+      <img [src]="blackDiceUrl" [alt]="" />
+      </div>
+      <div>{{multiplier()}}</div>
     </ng-container>
     <ng-template #noDice>
       <em>Sin tiradas</em>
     </ng-template>
   </section>
 </div>
-<div>{{dice | json}}</div>
