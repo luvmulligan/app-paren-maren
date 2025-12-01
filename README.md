@@ -60,17 +60,17 @@ For more information on using the Angular CLI, including detailed command refere
 
 ## Deployment (Docker + GitHub Actions)
 
-This repo includes CI templates to build and publish the server as a Docker image and to deploy the client to GitHub Pages.
+This repo includes CI templates to build and publish the server as a Docker image (GHCR) and to deploy the client to GitHub Pages.
 
 What was added
 - `server/Dockerfile` — container image for the Node.js server
-- `.github/workflows/server-ci.yml` — builds/pushes server image to GitHub Container Registry (GHCR)
-- `.github/workflows/client-deploy.yml` — builds the Angular client and publishes to GitHub Pages
+- `.github/workflows/server-ghcr.yml` — builds/pushes the server image to GitHub Container Registry (GHCR) on push to main
+- `.github/workflows/client-pages.yml` — builds the Angular client and publishes the build output in `dist/paren-maren` to GitHub Pages on push to main
 
 Notes & next steps
-- GHCR (GitHub Container Registry) can accept pushes from Actions. If your account needs a PAT with package:write access, add it to repository secrets (see workflow comments). Using `GITHUB_TOKEN` may be sufficient in many orgs.
+- GHCR (GitHub Container Registry) can accept pushes from Actions. The workflow uses the `GITHUB_TOKEN` for authentication; if you prefer using a package PAT create one with `write:packages`, add it as a repository secret (e.g. `GHCR_TOKEN`) and update the workflow to use it.
 - The server image is pushed to `ghcr.io/<owner>/paren-maren-server:latest` and `:<sha>`.
-- The client is published to `gh-pages` via `peaceiris/actions-gh-pages` from `dist/paren-maren`.
+- The client is published to GitHub Pages using the official GitHub Pages actions pipeline; the workflow builds the project and deploys `dist/paren-maren`.
 
 Deployment targets
 - If you want a fully managed server with WebSocket support (recommended for a quick start), consider Render, Fly.io, or Railway and use the built Docker image or deploy directly from the repository.
