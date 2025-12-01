@@ -48,7 +48,7 @@ export class RealtimeService implements OnDestroy {
 
 
   // Adjust the URL if your server runs elsewhere
-  private readonly serverUrl = 'http://localhost:3000';
+  private readonly serverUrl = 'https://app-paren-maren.onrender.com';
 
   constructor(private zone: NgZone) {}
 
