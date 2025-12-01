@@ -2,33 +2,61 @@
   <h1>{{ title() }}</h1>
 
   <section class="status">
-    <div>Jugador actual: {{ currentPlayer() }}</div>
-    <div>Último tiro: {{ last() ?? '-' }}</div>
+    <!-- <div>Jugador actual: {{ currentPlayer() }}</div> -->
+    <!-- <div>Último tiro: {{ last() ?? '-' }}</div> -->
   </section>
 
-  <section class="actions">
-    <button type="button" (click)="rollDice()">Tirar dado</button>
-    <button type="button" (click)="leaveRoom()">Salir de la sala</button>
+  <section class="join">
+    <label for="name">Nombre</label>
+    <input id="name" type="text" [(ngModel)]="newPlayer" placeholder="Tu nombre" />
+    <button (click)="joinRoom()" [disabled]="joined || !newPlayer.trim()">Unirse</button>
+    <em *ngIf="joined">Conectado como {{ currentPlayer() }}</em>
+    <button (click)="startGame()">Start Game</button>
   </section>
+
+  <!-- <section class="lobby">
+    <input type="text" placeholder="Nombre" [(ngModel)]="newPlayer" />
+    <button type="button" (click)="joinRoom()" [disabled]="!newPlayer">Unirse a la sala</button>    
+  </section> -->
+
+    <section class="player-list">
+      <h3>Players</h3>
+      <div *ngFor="let player of players" class="player-row" [class.current]="currentPlayer() === player.name">
+        <div class="player-name">
+          {{player.name}}
+          <span *ngIf="currentPlayer() === player.name" class="badge">En turno</span>
+        </div>
+        <div class="player-score">{{player.score}}</div>
+      </div>
+    </section>
+
+
 
   <section class="dice-list">
     <h3>Tiradas actuales</h3>
-    <ng-container *ngIf="dice().length; else noDice">
+    <ng-container *ngIf="dice().length; else noDice" class="min-height">
+      <div class="table">
       <div class="dice-container">
       <div *ngFor="let d of dice(); let i = index">
         <img [src]="'assets/dice' + d + '.png'" [alt]="" />
       </div>
       </div>
-      <div class="paren-maren-button">
-        <button *ngIf="canParenMaren()" (click)="rollParenMaren()">Paren Maren</button>
-      </div>
-        <div class="multiplier-container" *ngIf="parenMarenPressed()">
+      <div class="multiplier-container" *ngIf="parenMarenPressed()">
       <img [src]="blackDiceUrl" [alt]="" />
       </div>
-      <div>{{multiplier()}}</div>
+      </div>
+      <div class="paren-maren-button center-content">
+        <button *ngIf="canParenMaren()" (click)="rollParenMaren()" [disabled]="!canRoll">Paren Maren</button>
+      </div>
+    
     </ng-container>
+
     <ng-template #noDice>
       <em>Sin tiradas</em>
     </ng-template>
+  </section>
+    <section class="actions center-content">
+    <button type="button" (click)="rollDice()" [disabled]="!canRoll">Roll!</button>
+    <!-- <button type="button" (click)="leaveRoom()">Salir de la sala</button> -->
   </section>
 </div>

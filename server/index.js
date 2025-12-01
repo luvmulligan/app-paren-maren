@@ -22,7 +22,7 @@ function createRoom(roomId, host) {
     id: roomId,
     createdAt: now(),
     hostId: host.id,
-    players: new Map([[host.id, { id: host.id, name: host.name, ready: false, connected: true }]]),
+    players: new Map([[host.id, { id: host.id, name: host.name, ready: false, connected: true, score: 0 }]]),
     turnOrder: [host.id],
     turnIndex: 0,
     dice: [],
@@ -52,12 +52,13 @@ function ensurePlayer(room, playerId) {
 function joinRoom(roomId, player) {
   const room = getRoom(roomId);
   if (!room.players.has(player.id)) {
-    room.players.set(player.id, { id: player.id, name: player.name, ready: false, connected: true });
+    room.players.set(player.id, { id: player.id, name: player.name, ready: false, connected: true, score: 0 });
     room.turnOrder.push(player.id);
   } else {
     const p = room.players.get(player.id);
     p.name = player.name || p.name;
     p.connected = true;
+    if (typeof p.score !== 'number') p.score = 0;
   }
   return room;
 }
@@ -100,6 +101,7 @@ function currentPlayerId(room) {
 
 function rollDice(roomId, playerId, _diceCount = 1, faces = 6) {
   const room = getRoom(roomId);
+  room.canParenMaren = false;
   if (room.phase !== 'playing') throw new Error('Game not in playing phase');
   if (currentPlayerId(room) !== playerId) throw new Error("Not this player's turn");
   const roll = 1 + Math.floor(Math.random() * faces);
@@ -120,19 +122,34 @@ function rollParenMaren(roomId, playerId, _diceCount = 1, faces = 6){
   const roll = 1 + Math.floor(Math.random() * faces);
   room.multiplier = roll;
   room.canParenMaren = false;
-
   return room;
 }
 
 
 function endTurn(roomId, playerId) {
   const room = getRoom(roomId);
+
   if (room.phase !== 'playing') throw new Error('Game not in playing phase');
   if (currentPlayerId(room) !== playerId) throw new Error("Not this player's turn");
   if (room.turnOrder.length === 0) return room;
+
+  // compute gained score = sum(dice) * multiplier for current player
+  const sum = Array.isArray(room.dice) ? room.dice.reduce((acc, v) => acc + v, 0) : 0;
+  const mul = typeof room.multiplier === 'number' ? room.multiplier : 1;
+  const gained = sum * mul;
+  const currentId = currentPlayerId(room);
+  const player = room.players.get(currentId);
+  if (player) {
+    if (typeof player.score !== 'number') player.score = 0;
+    player.score += gained;
+  }
+
+  // advance turn and reset transient state
   room.turnIndex = (room.turnIndex + 1) % room.turnOrder.length;
   room.dice = [];
   room.canParenMaren = false;
+  room.parenMarenPressed = false;
+  room.multiplier = 1;
   return room;
 }
 
@@ -206,9 +223,9 @@ io.on('connection', (socket) => {
 
   socket.on('rollDice', (payload, ack) => {
     try {
-      const { faces = 6 , canParenMaren} = payload || {};
+      const { faces = 6 } = payload || {};
       const { roomId, playerId } = socket.data;
-      const room = rollDice(roomId, playerId, 1, faces, canParenMaren);
+      const room = rollDice(roomId, playerId, 1, faces);
       
       io.to(roomId).emit('roomUpdated', snapshotRoom(room));
       ack && ack({ ok: true, last: room.dice[room.dice.length - 1], dice: room.dice, canParenMaren: room.canParenMaren });
@@ -221,12 +238,12 @@ io.on('connection', (socket) => {
 
     socket.on('rollParenMaren', (payload, ack) => {
     try {
-      const { faces = 6 , canParenMaren} = payload || {};
+      const { faces = 6 } = payload || {};
       const { roomId, playerId } = socket.data;
-      const room = rollParenMaren(roomId, playerId, 1, faces, canParenMaren, parenMarenPressed, multiplier);
+      const room = rollParenMaren(roomId, playerId, 1, faces);
       
       io.to(roomId).emit('roomUpdated', snapshotRoom(room));
-      ack && ack({ ok: true, last: room.dice[room.dice.length - 1], dice: room.dice, canParenMaren: room.canParenMaren, parenMarenPressed: room.parenMarenPressed, multiplier: room.multiplier });
+      ack && ack({ ok: true, parenMarenPressed: room.parenMarenPressed, multiplier: room.multiplier, canParenMaren: room.canParenMaren });
     } catch (err) {
       const message = err && err.message ? err.message : 'Unknown error';
       ack && ack({ ok: false, error: message });

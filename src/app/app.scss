@@ -1,3 +1,39 @@
 .dice-container{
     display: flex;
+    justify-content: center;
+    img{
+        width: 5rem;
+    }
+}
+.player-list{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.multiplier-container{
+    display: flex;
+    justify-content: center;
+    img{
+        width: 5rem;
+    }
+    }
+.center-content{
+    display: flex;
+    justify-content: center;
+}
+
+.min-height{
+    height: 12rem;
+}
+
+.dice-list{
+    height: 15rem;
+}
+
+.paren-maren-button{
+  position: relative;
+    top: 10rem;
 }

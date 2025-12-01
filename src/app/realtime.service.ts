@@ -64,10 +64,7 @@ export class RealtimeService implements OnDestroy {
     });
 
     this.socket?.on('roomUpdated', (room: RoomDto) => {
-      this.zone.run(() => {
-        this.room$.next(room);
-        this.diceView$.next([...(room?.dice ?? [])]);
-      });
+      this.zone.run(() => this.handleRoomUpdated(room));
     });
 
     this.socket?.on('roomDeleted', () => {
@@ -81,6 +78,26 @@ export class RealtimeService implements OnDestroy {
     this.socket?.on('errorMessage', (msg: string) => {
       this.zone.run(() => this.lastError$.next(msg));
     });
+  }
+
+  // Centralized handler so tests can call it directly and we ensure
+  // the persistent subjects (multiplier, parenMarenPressed, canParenMaren)
+  // get updated whenever the server sends a room update.
+  private handleRoomUpdated(room: RoomDto | null): void {
+    // Update transient/persistent subjects first so subscribers that react
+    // to a room update and inspect other observables/signals will see
+    // consistent state (no stale multiplier/pressed values).
+    this.diceView$.next([...(room?.dice ?? [])]);
+    if (room) {
+      if (typeof room.canParenMaren === 'boolean') this.canParenMaren$.next(room.canParenMaren);
+      if (typeof room.parenMarenPressed === 'boolean') this.parenMarenPressed$.next(room.parenMarenPressed);
+      if (typeof room.multiplier === 'number') this.multiplier$.next(room.multiplier);
+    }
+
+    // Finally emit the room snapshot. Doing this after the above ensures
+    // components receiving `roomChanges` that also read `multiplier()` or
+    // `parenMarenPressed()` observe the new values immediately.
+    this.room$.next(room);
   }
 
   ngOnDestroy(): void {
@@ -171,10 +188,11 @@ export class RealtimeService implements OnDestroy {
           if (ack?.ok) {
             if (Array.isArray(ack.dice)) this.diceView$.next([...(ack.dice as number[])]);
             if (typeof ack.last === 'number') this.lastRoll$.next(ack.last);
-            if (ack.canParenMaren) this.canParenMaren$.next(ack.canParenMaren)
+        
           } else if (ack?.error) {
             this.lastError$.next(ack.error);
           }
+          if (typeof ack.canParenMaren === 'boolean') this.canParenMaren$.next(ack.canParenMaren)
           resolve(ack);
         });
       });
@@ -188,8 +206,8 @@ export class RealtimeService implements OnDestroy {
         this.zone.run(() => {
           if (ack?.ok) {
             if (Array.isArray(ack.dice)) this.diceView$.next([...(ack.dice as number[])]);
-            if(ack.parenMarenPressed) this.parenMarenPressed$.next(ack.parenMarenPressed);
-            if (ack.multiplier) this.multiplier$.next(ack.multiplier);
+            if (typeof ack.parenMarenPressed === 'boolean') this.parenMarenPressed$.next(ack.parenMarenPressed);
+            if (typeof ack.multiplier === 'number') this.multiplier$.next(ack.multiplier);
           } else if (ack?.error) {
             this.lastError$.next(ack.error);
           }
@@ -204,7 +222,10 @@ export class RealtimeService implements OnDestroy {
     return new Promise((resolve) => {
       this.socket!.emit('endTurn', (ack: any) => {
         this.zone.run(() => {
+          // this.multiplier$.next(ack.multiplier);
+          // this.parenMarenPressed$.next(ack.parenMarenPressed);
           if (!ack?.ok && ack?.error) this.lastError$.next(ack.error);
+
           resolve(ack);
         });
       });
