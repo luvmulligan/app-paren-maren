@@ -76,6 +76,21 @@ Deployment targets
 - If you want a fully managed server with WebSocket support (recommended for a quick start), consider Render, Fly.io, or Railway and use the built Docker image or deploy directly from the repository.
 - For production-level auto-scaling consider: Cloud Run, ECS/Fargate, or a managed Kubernetes cluster; remember to use a message broker / Redis if you scale to multiple instances.
 
+Automatic server deploy to Render (optional)
+-----------------------------------------
+If you want the server image built by CI to be deployed automatically to Render, follow these steps:
+
+1. Create a Render account and create a **Web Service** that will run your Node.js server. When you create the service choose **Deploy from a container registry** and set the repository to `ghcr.io/<your-user-or-org>/paren-maren-server` (the workflows publish the image with the `latest` tag).
+2. In the Render Dashboard create an **API Key** (Account → API Keys).
+3. In GitHub repository settings add two repository secrets:
+	- `RENDER_API_KEY` — the API key from Render
+	- `RENDER_SERVICE_ID` — the service ID of your Render service (find it in service details or via the Render API)
+4. The workflow `.github/workflows/server-ghcr.yml` will POST to the Render deploy API and trigger a deploy automatically when both secrets are present.
+
+Notes:
+- The deploy step runs only when both `RENDER_API_KEY` and `RENDER_SERVICE_ID` are configured in your repository secrets.
+- You can also configure Render to deploy directly from your GitHub repo instead of deploying an image from GHCR.
+
 If you want, I can:
 - Add a workflow to automatically deploy the built server image to a platform such as Google Cloud Run (requires linking secrets), or
 - Add a Dockerfile and GH Actions step to build/publish a client Docker image (for platforms that serve static content via containers).
