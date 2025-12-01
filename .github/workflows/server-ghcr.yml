@@ -47,8 +47,13 @@ jobs:
     needs: build-and-push
 
     steps:
+      - name: Check Render secrets
+        run: |
+          if [ -z "${{ secrets.RENDER_API_KEY }}" ] || [ -z "${{ secrets.RENDER_SERVICE_ID }}" ]; then
+            echo "RENDER_API_KEY y/o RENDER_SERVICE_ID no están definidos como secrets. Skipping Render deploy." >&2
+            exit 1
+          fi
       - name: Trigger Render deploy
-        if: ${{ secrets.RENDER_API_KEY != '' && secrets.RENDER_SERVICE_ID != '' }}
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
