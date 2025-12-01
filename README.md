@@ -57,3 +57,26 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Deployment (Docker + GitHub Actions)
+
+This repo includes CI templates to build and publish the server as a Docker image and to deploy the client to GitHub Pages.
+
+What was added
+- `server/Dockerfile` — container image for the Node.js server
+- `.github/workflows/server-ci.yml` — builds/pushes server image to GitHub Container Registry (GHCR)
+- `.github/workflows/client-deploy.yml` — builds the Angular client and publishes to GitHub Pages
+
+Notes & next steps
+- GHCR (GitHub Container Registry) can accept pushes from Actions. If your account needs a PAT with package:write access, add it to repository secrets (see workflow comments). Using `GITHUB_TOKEN` may be sufficient in many orgs.
+- The server image is pushed to `ghcr.io/<owner>/paren-maren-server:latest` and `:<sha>`.
+- The client is published to `gh-pages` via `peaceiris/actions-gh-pages` from `dist/paren-maren`.
+
+Deployment targets
+- If you want a fully managed server with WebSocket support (recommended for a quick start), consider Render, Fly.io, or Railway and use the built Docker image or deploy directly from the repository.
+- For production-level auto-scaling consider: Cloud Run, ECS/Fargate, or a managed Kubernetes cluster; remember to use a message broker / Redis if you scale to multiple instances.
+
+If you want, I can:
+- Add a workflow to automatically deploy the built server image to a platform such as Google Cloud Run (requires linking secrets), or
+- Add a Dockerfile and GH Actions step to build/publish a client Docker image (for platforms that serve static content via containers).
+

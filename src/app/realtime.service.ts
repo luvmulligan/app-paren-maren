@@ -23,6 +23,7 @@ export interface RoomDto {
   canParenMaren: boolean;
   parenMarenPressed: boolean;
   multiplier: number;
+  winner?: string | null;
 
 }
 
@@ -222,8 +223,6 @@ export class RealtimeService implements OnDestroy {
     return new Promise((resolve) => {
       this.socket!.emit('endTurn', (ack: any) => {
         this.zone.run(() => {
-          // this.multiplier$.next(ack.multiplier);
-          // this.parenMarenPressed$.next(ack.parenMarenPressed);
           if (!ack?.ok && ack?.error) this.lastError$.next(ack.error);
 
           resolve(ack);

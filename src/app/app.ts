@@ -1,4 +1,5 @@
 import { Component, effect, OnInit, signal } from '@angular/core';
+import { take } from 'rxjs';
 import { RealtimeService } from './realtime.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -24,6 +25,12 @@ export class App implements OnInit{
   public players: any[] = [];
   public canRoll: boolean = true;
   public newPlayer: string = '';
+  public hostPlayer: string = '';
+  public gameStarted: boolean = false;
+  public phase: string = 'lobby';
+  public roomId: string = this.generateRoomId();
+  public joinerId: string = '';
+  public createRoom: boolean = true;
   
   // roomId: string;
   // playerId: string;
@@ -74,17 +81,25 @@ export class App implements OnInit{
             const turnIndex = typeof data.turnIndex === 'number' ? data.turnIndex : 0;
             const idAtTurn = data.turnOrder?.[turnIndex];
             const current = (data.players ?? []).find((p: any) => String(p.id) === String(idAtTurn));
+            if(current?.id === data.hostId){
+              this.hostPlayer = current?.name ?? '';
+            }
             this.currentPlayer.set(current?.name ?? '');
             if(this.newPlayer === current?.name){
               this.canRoll = true;
             }else{
               this.canRoll = false;
             }
+            this.phase = data.phase;
           } else {
             this.currentPlayer.set('');
           }
+          
       const mul = (data && typeof data.multiplier === 'number') ? data.multiplier : this.multiplier();
       this.blackDiceUrl = `assets/black-dice-${mul}.png`
+      const winner  = data?.winner;
+      if(winner){
+        alert(`El ganador es ${winner}!`) }
 
     })
 
@@ -95,16 +110,19 @@ export class App implements OnInit{
         const parsed = JSON.parse(raw);
         if (parsed?.name) this.newPlayer = parsed.name;
         if (typeof parsed?.playerId === 'number') this.playerId = parsed.playerId;
+        if (typeof parsed?.roomId === 'string') {
+          this.roomId = parsed.roomId;
+          // ensure join attempts use the stored id when rejoining
+          this.joinerId = parsed.roomId;
+        }
         // If previously joined, rejoin automatically when socket becomes connected
         if (parsed?.joined) {
-          // subscribe once and rejoin when connected
-          let sub: any;
-          sub = this.rt.connectionChanges().subscribe((connected: boolean) => {
+          // wait for a connected state, take one emission (auto-unsubscribe)
+          this.rt.connectionChanges().pipe(take(1)).subscribe((connected: boolean) => {
             if (connected) {
               // ensure we attempt to join only once
               this.joined = false;
               this.joinRoom();
-              sub.unsubscribe();
             }
           });
         }
@@ -114,18 +132,46 @@ export class App implements OnInit{
     }
     }
 
-    joinRoom(){
+    createNewRoom(){
       if (!this.newPlayer || this.newPlayer.trim().length === 0) return;
       // Guard: don't let the same client call join multiple times
       if (this.joined) return;
 
-      return this.rt.joinRoom({roomId: 'room1', playerId: this.playerId, name: this.newPlayer, createIfMissing: true}).then((ack)=>{
+      // generate and use a 4-letter room id for the new room and persist locally
+      this.roomId = this.generateRoomId();
+      this.joinerId = this.roomId;
+
+      return this.rt.joinRoom({roomId: this.roomId, playerId: this.playerId, name: this.newPlayer, createIfMissing: true}).then((ack)=>{
         if (ack?.ok) {
           this.joined = true;
           this.currentPlayer.set(this.newPlayer);
           // persist join info so a page reload can restore this session
           try {
-            localStorage.setItem(this.LS_KEY, JSON.stringify({ playerId: this.playerId, name: this.newPlayer, joined: true }));
+            localStorage.setItem(this.LS_KEY, JSON.stringify({ playerId: this.playerId, name: this.newPlayer, joined: true, roomId: this.roomId }));
+          } catch (e) {
+            // ignore storage errors
+          }
+        }
+        console.log('createNewRoom ack', ack)
+      })
+    }
+
+    joinRoom(){
+      if (!this.newPlayer || this.newPlayer.trim().length === 0) return;
+      // Guard: don't let the same client call join multiple times
+      if (this.joined) return;
+
+      // ensure a room id was entered
+      if (!this.joinerId || this.joinerId.trim().length !== 4) return Promise.resolve({ ok: false, error: 'invalid room id' });
+
+      return this.rt.joinRoom({roomId: this.joinerId.toUpperCase(), playerId: this.playerId, name: this.newPlayer, createIfMissing: false}).then((ack)=>{
+        if (ack?.ok) {
+          this.joined = true;
+          this.currentPlayer.set(this.newPlayer);
+          // persist join info so a page reload can restore this session
+          try {
+            this.roomId = this.joinerId.toUpperCase();
+            localStorage.setItem(this.LS_KEY, JSON.stringify({ playerId: this.playerId, name: this.newPlayer, joined: true, roomId: this.roomId }));
           } catch (e) {
             // ignore storage errors
           }
@@ -134,6 +180,8 @@ export class App implements OnInit{
       })
     }
     startGame(){
+             this.gameStarted = true;
+
        this.rt.startGame();
     }
 
@@ -161,6 +209,18 @@ export class App implements OnInit{
         this.rt.endTurn();
       },2000)
      
+    }
+
+    // Utility: return a random 4-letter uppercase string for room IDs
+    generateRoomId(): string {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let out = '';
+      for (let i = 0; i < 4; i++) out += chars[Math.floor(Math.random() * chars.length)];
+      return out;
+    }
+
+    regenerateRoomId(){
+      this.roomId = this.generateRoomId();
     }
 
 

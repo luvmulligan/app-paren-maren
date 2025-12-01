@@ -32,6 +32,7 @@ function createRoom(roomId, host) {
     canParenMaren: false,
     canRoll: false,
     phase: 'lobby', // lobby | playing | ended
+    winner: null,
   };
   rooms.set(roomId, room);
   return room;
@@ -87,8 +88,7 @@ function leaveRoom(roomId, playerId) {
 
 function startGame(roomId, requesterId) {
   const room = getRoom(roomId);
-  // if (room.hostId !== requesterId) throw new Error('Only host can start the game');
-  // if (room.players.size < 2) throw new Error('Need at least 2 players to start');
+  if (room.hostId !== requesterId) throw new Error('Only host can start the game');
   room.phase = 'playing';
   room.turnIndex = 0;
   room.dice = [];
@@ -142,6 +142,10 @@ function endTurn(roomId, playerId) {
   if (player) {
     if (typeof player.score !== 'number') player.score = 0;
     player.score += gained;
+    if(player.score >= 365){
+      room.phase = 'ended';
+      room.winner = player.name;
+    }
   }
 
   // advance turn and reset transient state
@@ -165,7 +169,8 @@ function snapshotRoom(room) {
     phase: room.phase,
     canParenMaren: room.canParenMaren,
     parenMarenPressed: room.parenMarenPressed,
-    multiplier: room.multiplier
+    multiplier: room.multiplier,
+    winner: room.winner
   };
 }
 

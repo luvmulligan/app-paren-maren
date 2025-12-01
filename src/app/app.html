@@ -1,17 +1,34 @@
 <div class="app">
   <h1>{{ title() }}</h1>
 
-  <section class="status">
-    <!-- <div>Jugador actual: {{ currentPlayer() }}</div> -->
-    <!-- <div>Último tiro: {{ last() ?? '-' }}</div> -->
+      <div class="player-join" *ngIf="!joined">
+    <label for="name">Name</label>
+    <input id="name" type="text" [(ngModel)]="newPlayer" placeholder="Name" />
+    <!-- <button (click)="joinRoom()" [disabled]="joined || !newPlayer.trim()">Unirse</button> -->
+    </div>
+
+  <section class="status" *ngIf="joined">
+    <div>Room ID: <strong>{{ roomId }}</strong>
+      <!-- <button (click)="regenerateRoomId()" title="Regenerate room id">🔁</button> -->
+    </div>
+  </section>
+
+  <section>
+    <div>Create new room: </div>
+    <button (click)="createNewRoom()">Create Room</button>
+  </section>
+
+  <section>
+    <div>Connect to existing room: </div>
+    <input type="text" [(ngModel)]="joinerId" placeholder="Room ID"/> 
+    <button (click)="joinRoom()">Join</button>
   </section>
 
   <section class="join">
-    <label for="name">Nombre</label>
-    <input id="name" type="text" [(ngModel)]="newPlayer" placeholder="Tu nombre" />
-    <button (click)="joinRoom()" [disabled]="joined || !newPlayer.trim()">Unirse</button>
-    <em *ngIf="joined">Conectado como {{ currentPlayer() }}</em>
-    <button (click)="startGame()">Start Game</button>
+    <div>Room host: {{hostPlayer}}</div>
+
+    <em *ngIf="joined">Connected as {{ currentPlayer() }}</em>
+    <button (click)="startGame()" *ngIf="currentPlayer() === hostPlayer && phase === 'lobby'">Start Game</button>
   </section>
 
   <!-- <section class="lobby">
@@ -22,9 +39,10 @@
     <section class="player-list">
       <h3>Players</h3>
       <div *ngFor="let player of players" class="player-row" [class.current]="currentPlayer() === player.name">
+   
         <div class="player-name">
           {{player.name}}
-          <span *ngIf="currentPlayer() === player.name" class="badge">En turno</span>
+          <!-- <span *ngIf="currentPlayer() === player.name" class="badge">En turno</span> -->
         </div>
         <div class="player-score">{{player.score}}</div>
       </div>
@@ -33,7 +51,6 @@
 
 
   <section class="dice-list">
-    <h3>Tiradas actuales</h3>
     <ng-container *ngIf="dice().length; else noDice" class="min-height">
       <div class="table">
       <div class="dice-container">
@@ -52,7 +69,7 @@
     </ng-container>
 
     <ng-template #noDice>
-      <em>Sin tiradas</em>
+      <!-- <em>Sin tiradas</em> -->
     </ng-template>
   </section>
     <section class="actions center-content">
