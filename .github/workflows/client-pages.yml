@@ -70,12 +70,17 @@ jobs:
           echo "== Dist/$REPO_NAME/browser listing: =="
           ls -la dist/$REPO_NAME/browser || true
           echo "== Show index.html if present: =="
-          if [ -f dist/$REPO_NAME/index.html ]; then
-            echo "index.html found at dist/$REPO_NAME/index.html";
-            head -n 5 dist/$REPO_NAME/index.html || true
-          elif [ -f dist/$REPO_NAME/browser/index.html ]; then
-            echo "index.html found at dist/$REPO_NAME/browser/index.html";
-            head -n 5 dist/$REPO_NAME/browser/index.html || true
+          # try to find index.html anywhere under dist/<repo>
+          # search recursively for index.html anywhere under dist/$REPO_NAME
+          FOUND_INDEX=$(find dist/$REPO_NAME -type f -name index.html | head -n 1 || true)
+          if [ -n "$FOUND_INDEX" ]; then
+            echo "Found index at: $FOUND_INDEX"
+            head -n 10 "$FOUND_INDEX" || true
+            ARTIFACT_DIR=$(dirname "$FOUND_INDEX")
+            echo "ARTIFACT_DIR=$ARTIFACT_DIR" >> $GITHUB_ENV
+          else
+            echo "index.html NOT found anywhere in dist/$REPO_NAME";
+          fi
           else
             echo "index.html NOT found in dist/$REPO_NAME";
           fi
@@ -83,21 +88,31 @@ jobs:
       - name: Configure pages
         uses: actions/configure-pages@v3
 
-      - name: Ensure browser artifact exists
+      - name: Ensure artifact exists
         run: |
           if [ -z "$REPO_NAME" ]; then
             echo "ERROR: REPO_NAME not set in GITHUB_ENV; build step may have failed." >&2
             exit 1
           fi
-          if [ ! -f dist/$REPO_NAME/browser/index.html ]; then
-            echo "ERROR: dist/$REPO_NAME/browser/index.html not found. Build output likely different — check build logs." >&2
+          if [ -z "$ARTIFACT_DIR" ]; then
+            echo "ERROR: ARTIFACT_DIR not set; index.html not found under dist/$REPO_NAME" >&2
+            exit 1
+          fi
+          if [ ! -f "$ARTIFACT_DIR/index.html" ]; then
+            echo "ERROR: $ARTIFACT_DIR/index.html not found. Build output likely different — check build logs." >&2
             exit 1
           fi
 
       - name: Prepare artifact directory
         run: |
+          if [ -z "$ARTIFACT_DIR" ]; then
+            echo "ARTIFACT_DIR not set — cannot prepare artifact" >&2
+            exit 1
+          fi
           rm -rf dist/public || true
-          cp -a dist/$REPO_NAME/browser dist/public
+          mkdir -p dist/public
+          # copy contents of the artifact dir into dist/public
+          cp -a "$ARTIFACT_DIR/." dist/public
 
       - name: Upload artifact
         # use latest non-deprecated upload-pages-artifact
