@@ -185,6 +185,7 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
+  console.log(`[socket] connected: id=${socket.id} remote=${socket.conn?.remoteAddress || 'unknown'}`);
   // Expected to receive: { roomId, playerId, name, createIfMissing? }
   socket.on('joinRoom', (payload, ack) => {
     try {
@@ -211,6 +212,10 @@ io.on('connection', (socket) => {
       ack && ack({ ok: false, error: message });
       socket.emit('errorMessage', message);
     }
+  });
+
+  socket.on('error', (err) => {
+    console.warn(`[socket] error on ${socket.id}:`, err && err.message ? err.message : err);
   });
 
   socket.on('startGame', (ack) => {
@@ -292,6 +297,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     const { roomId, playerId } = socket.data || {};
+    console.log(`[socket] disconnected: id=${socket.id} room=${roomId || '-'} player=${playerId || '-'}`);
     if (!roomId || !playerId) return;
     try {
       const room = getRoom(roomId);
