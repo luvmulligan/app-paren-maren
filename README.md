@@ -87,6 +87,20 @@ If you want the server image built by CI to be deployed automatically to Render,
 	- `RENDER_SERVICE_ID` — the service ID of your Render service (find it in service details or via the Render API)
 4. The workflow `.github/workflows/server-ghcr.yml` will POST to the Render deploy API and trigger a deploy automatically when both secrets are present.
 
+Render start command / static client notes
+-----------------------------------------
+- On Render make sure the service Start Command runs your Node server (not `ng serve`). Example:
+
+```bash
+# Run the Node server which serves the API + static client files
+npm run server
+# OR directly: node server/index.js
+```
+
+- `ng serve` runs the Angular dev server (localhost:4200) and is not suitable for production deployment — it may not bind to the public port and will not handle WebSocket upgrades properly.
+
+- If you want the server to also serve the built client, ensure your CI builds the Angular app into `dist/<repo>/browser` and the Node server will automatically detect and serve it (the server looks for a built `index.html` under `dist/`).
+
 Notes:
 - The deploy step runs only when both `RENDER_API_KEY` and `RENDER_SERVICE_ID` are configured in your repository secrets.
 - You can also configure Render to deploy directly from your GitHub repo instead of deploying an image from GHCR.

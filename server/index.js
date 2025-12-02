@@ -179,7 +179,63 @@ const app = express();
 app.use(express.json());
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
+const fs = require('fs');
+const path = require('path');
+
 const server = http.createServer(app);
+
+// Try to find a built client artifact under dist/* with an index.html
+function findBuiltClientDir() {
+  const distRoot = path.join(__dirname, '..', 'dist');
+  if (!fs.existsSync(distRoot)) return null;
+
+  // search recursively for index.html and return its parent dir
+  const results = [];
+
+  function walk(dir) {
+    try {
+      const items = fs.readdirSync(dir, { withFileTypes: true });
+      for (const it of items) {
+        const full = path.join(dir, it.name);
+        if (it.isFile() && it.name === 'index.html') {
+          results.push(dir);
+          return true;
+        }
+        if (it.isDirectory()) {
+          if (walk(full)) return true;
+        }
+      }
+    } catch (e) {
+      // ignore permission errors
+    }
+    return false;
+  }
+
+  // check immediate children of dist first (typical Angular output dist/<name>/browser)
+  const children = fs.readdirSync(distRoot, { withFileTypes: true });
+  for (const child of children) {
+    if (child.isDirectory()) {
+      const candidate = path.join(distRoot, child.name);
+      if (walk(candidate)) return results[0];
+    }
+  }
+
+  // fallback: search whole dist tree
+  if (walk(distRoot)) return results[0];
+  return null;
+}
+
+const CLIENT_DIR = findBuiltClientDir();
+if (CLIENT_DIR) {
+  console.log(`[static] serving client from ${CLIENT_DIR}`);
+  app.use(express.static(CLIENT_DIR));
+  // SPA fallback — serve index.html for any unknown path
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(CLIENT_DIR, 'index.html'));
+  });
+} else {
+  console.log('[static] no built client found under dist — static serving disabled');
+}
 const io = new Server(server, {
   cors: { origin: '*' },
 });
@@ -310,6 +366,7 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
+// Listen on all interfaces (0.0.0.0) so hosting platforms like Render can bind the public port
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server listening on http://0.0.0.0:${PORT}`);
 });
