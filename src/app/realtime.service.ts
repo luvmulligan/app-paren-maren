@@ -54,7 +54,17 @@ export class RealtimeService implements OnDestroy {
 
   connect(): void {
     if (this.socket && this.socket.connected) return;
-    this.socket = io(this.serverUrl, { transports: ['websocket'] });
+    // prefer the default transport strategy (polling -> upgrade to websocket)
+    // forcing websocket-only can fail on some proxies or hosting providers — allow polling first
+    this.socket = io(this.serverUrl, {
+      // allow polling fallback to ensure the connection can be established
+      transports: ['polling', 'websocket'],
+      // wait longer for the connection in case of cold servers
+      timeout: 20000,
+      // reconnection settings (socket.io defaults are ok, but make explicit)
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
 
     this.socket?.on('connect', () => {
       this.zone.run(() => this.connected$.next(true));
@@ -62,6 +72,28 @@ export class RealtimeService implements OnDestroy {
 
     this.socket?.on('disconnect', () => {
       this.zone.run(() => this.connected$.next(false));
+    });
+
+    // helpful debug hooks for connection issues — surface errors into lastError$
+    this.socket?.on('connect_error', (err: any) => {
+      const msg = err && err.message ? err.message : String(err);
+      // keep lastError$ updated so UI can show useful messages
+      this.zone.run(() => this.lastError$.next(`connect_error: ${msg}`));
+      // also log to console for developer diagnostics
+      // eslint-disable-next-line no-console
+      console.warn('socket connect_error', err);
+    });
+
+    this.socket?.on('connect_timeout', (timeout) => {
+      this.zone.run(() => this.lastError$.next('connect_timeout'));
+      // eslint-disable-next-line no-console
+      console.warn('socket connect_timeout', timeout);
+    });
+
+    this.socket?.on('reconnect_failed', () => {
+      this.zone.run(() => this.lastError$.next('reconnect_failed'));
+      // eslint-disable-next-line no-console
+      console.warn('socket reconnect_failed');
     });
 
     this.socket?.on('roomUpdated', (room: RoomDto) => {
