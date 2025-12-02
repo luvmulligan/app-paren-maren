@@ -35,7 +35,15 @@ jobs:
         run: npm ci
 
       - name: Build client
-        run: npm run build --if-present
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          # Build the Angular app with the correct base href for GitHub Pages
+          # GitHub Pages serves user sites at https://<user>.github.io/<repo>/
+          REPO_NAME=${GITHUB_REPOSITORY##*/}
+          echo "Repo name is: $REPO_NAME"
+          echo "Building with base-href=/$REPO_NAME/ and output-path=dist/$REPO_NAME/browser"
+          npm run build --if-present -- --base-href "/$REPO_NAME/" --output-path "dist/$REPO_NAME/browser"
 
       - name: Show build output (debug)
         run: |
