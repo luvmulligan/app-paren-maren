@@ -46,6 +46,20 @@ jobs:
           echo "Building with base-href=/$REPO_NAME/ and output-path=dist/$REPO_NAME/browser"
           npm run build --if-present -- --base-href "/$REPO_NAME/" --output-path "dist/$REPO_NAME/browser"
 
+      - name: Detect built dist folder
+        run: |
+          if [ -d dist ]; then
+            FIRST=$(ls -1 dist | head -n 1 || true)
+            if [ -n "$FIRST" ]; then
+              echo "REPO_NAME=$FIRST" >> $GITHUB_ENV
+              echo "Detected dist folder: $FIRST"
+            else
+              echo "No subfolders found in dist"
+            fi
+          else
+            echo "dist directory not found"
+          fi
+
       - name: Show build output (debug)
         run: |
           echo "== Working dir: $(pwd) =="
@@ -63,7 +77,7 @@ jobs:
             echo "index.html found at dist/$REPO_NAME/browser/index.html";
             head -n 5 dist/$REPO_NAME/browser/index.html || true
           else
-            echo 'index.html NOT found in dist/paren-maren';
+            echo "index.html NOT found in dist/$REPO_NAME";
           fi
 
       - name: Configure pages
