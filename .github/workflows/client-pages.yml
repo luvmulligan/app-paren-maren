@@ -31,6 +31,21 @@ jobs:
       - name: Build client
         run: npm run build --if-present
 
+      - name: Show build output (debug)
+        run: |
+          echo "== Working dir: $(pwd) =="
+          echo "== Dist folder listing: =="
+          ls -la dist || true
+          echo "== Dist/paren-maren listing: =="
+          ls -la dist/paren-maren || true
+          echo "== Show index.html if present: =="
+          if [ -f dist/paren-maren/index.html ]; then
+            echo 'index.html found';
+            head -n 5 dist/paren-maren/index.html || true
+          else
+            echo 'index.html NOT found in dist/paren-maren';
+          fi
+
       - name: Configure pages
         uses: actions/configure-pages@v3
 
