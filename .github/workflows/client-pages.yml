@@ -15,6 +15,7 @@ on:
 permissions:
   contents: read
   pages: write
+  id-token: write
 
 jobs:
   build-and-deploy:
@@ -54,7 +55,8 @@ jobs:
         uses: actions/configure-pages@v3
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        # use latest non-deprecated upload-pages-artifact
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist/paren-maren
 
@@ -63,4 +65,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v1
+        # use a current deploy action version (v4) to avoid deprecated dependencies
+        uses: actions/deploy-pages@v4
