@@ -42,6 +42,7 @@ jobs:
           # GitHub Pages serves user sites at https://<user>.github.io/<repo>/
           REPO_NAME=${GITHUB_REPOSITORY##*/}
           echo "Repo name is: $REPO_NAME"
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
           echo "Building with base-href=/$REPO_NAME/ and output-path=dist/$REPO_NAME/browser"
           npm run build --if-present -- --base-href "/$REPO_NAME/" --output-path "dist/$REPO_NAME/browser"
 
@@ -50,17 +51,17 @@ jobs:
           echo "== Working dir: $(pwd) =="
           echo "== Dist folder listing: =="
           ls -la dist || true
-          echo "== Dist/paren-maren listing: =="
-          ls -la dist/paren-maren || true
-          echo "== Dist/paren-maren/browser listing: =="
-          ls -la dist/paren-maren/browser || true
+          echo "== Dist/$REPO_NAME listing: =="
+          ls -la dist/$REPO_NAME || true
+          echo "== Dist/$REPO_NAME/browser listing: =="
+          ls -la dist/$REPO_NAME/browser || true
           echo "== Show index.html if present: =="
-          if [ -f dist/paren-maren/index.html ]; then
-            echo 'index.html found at dist/paren-maren/index.html';
-            head -n 5 dist/paren-maren/index.html || true
-          elif [ -f dist/paren-maren/browser/index.html ]; then
-            echo 'index.html found at dist/paren-maren/browser/index.html';
-            head -n 5 dist/paren-maren/browser/index.html || true
+          if [ -f dist/$REPO_NAME/index.html ]; then
+            echo "index.html found at dist/$REPO_NAME/index.html";
+            head -n 5 dist/$REPO_NAME/index.html || true
+          elif [ -f dist/$REPO_NAME/browser/index.html ]; then
+            echo "index.html found at dist/$REPO_NAME/browser/index.html";
+            head -n 5 dist/$REPO_NAME/browser/index.html || true
           else
             echo 'index.html NOT found in dist/paren-maren';
           fi
@@ -70,16 +71,25 @@ jobs:
 
       - name: Ensure browser artifact exists
         run: |
-          if [ ! -f dist/paren-maren/browser/index.html ]; then
-            echo "ERROR: dist/paren-maren/browser/index.html not found. Build output likely different — check build logs." >&2
+          if [ -z "$REPO_NAME" ]; then
+            echo "ERROR: REPO_NAME not set in GITHUB_ENV; build step may have failed." >&2
             exit 1
           fi
+          if [ ! -f dist/$REPO_NAME/browser/index.html ]; then
+            echo "ERROR: dist/$REPO_NAME/browser/index.html not found. Build output likely different — check build logs." >&2
+            exit 1
+          fi
+
+      - name: Prepare artifact directory
+        run: |
+          rm -rf dist/public || true
+          cp -a dist/$REPO_NAME/browser dist/public
 
       - name: Upload artifact
         # use latest non-deprecated upload-pages-artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./dist/paren-maren/browser
+          path: ./dist/public
 
   deploy:
     needs: build-and-deploy
