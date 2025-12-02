@@ -2,11 +2,15 @@ name: Build and deploy client to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    # Trigger when commits are pushed to main or master (some repos use master)
+    branches: [ main, master ]
     paths:
       - 'src/**'
       - 'angular.json'
       - 'package.json'
+
+  # Allow manual runs from the Actions UI for testing/debug
+  workflow_dispatch:
 
 permissions:
   contents: read
