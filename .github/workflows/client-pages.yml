@@ -44,10 +44,15 @@ jobs:
           ls -la dist || true
           echo "== Dist/paren-maren listing: =="
           ls -la dist/paren-maren || true
+          echo "== Dist/paren-maren/browser listing: =="
+          ls -la dist/paren-maren/browser || true
           echo "== Show index.html if present: =="
           if [ -f dist/paren-maren/index.html ]; then
-            echo 'index.html found';
+            echo 'index.html found at dist/paren-maren/index.html';
             head -n 5 dist/paren-maren/index.html || true
+          elif [ -f dist/paren-maren/browser/index.html ]; then
+            echo 'index.html found at dist/paren-maren/browser/index.html';
+            head -n 5 dist/paren-maren/browser/index.html || true
           else
             echo 'index.html NOT found in dist/paren-maren';
           fi
@@ -55,11 +60,18 @@ jobs:
       - name: Configure pages
         uses: actions/configure-pages@v3
 
+      - name: Ensure browser artifact exists
+        run: |
+          if [ ! -f dist/paren-maren/browser/index.html ]; then
+            echo "ERROR: dist/paren-maren/browser/index.html not found. Build output likely different — check build logs." >&2
+            exit 1
+          fi
+
       - name: Upload artifact
         # use latest non-deprecated upload-pages-artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./dist/paren-maren
+          path: ./dist/paren-maren/browser
 
   deploy:
     needs: build-and-deploy
