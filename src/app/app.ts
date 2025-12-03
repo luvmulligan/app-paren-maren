@@ -4,12 +4,17 @@ import { RealtimeService } from './realtime.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {MatIconModule} from '@angular/material/icon';
+import {MatDividerModule} from '@angular/material/divider';
+import {MatButtonModule} from '@angular/material/button';
+import {MatInputModule} from '@angular/material/input';
+import {MatFormFieldModule} from '@angular/material/form-field';
 
 
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, MatProgressBarModule],
+  imports: [CommonModule, FormsModule, MatProgressBarModule, MatButtonModule,MatIconModule,MatButtonModule, MatFormFieldModule,MatInputModule],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -214,11 +219,16 @@ export class App implements OnInit{
         this.rt.endTurn();
         return;
       }
+      
 
-      this.rt.rollDice().then(() => {
-        // server will emit updated room/dice state and roomChanges() subscription
-        // will set `canRoll` appropriately when turn changes; if you want to re-enable
-        // the button earlier you can adjust here based on response
+      this.rt.rollDice().then((ack: { ok: boolean; last?: number; dice?: number[]; error?: string }) => {
+        // Si el resultado del dado es menor o igual a 3, termina el turno
+        if (typeof ack.last === 'number' && ack.last <= 3) {
+          this.canRoll = false
+          setTimeout (() => { this.rt.endTurn();}, 2000);
+         
+        }
+        // server emitirá el nuevo estado y roomChanges() actualizará canRoll
       }).catch(err => {
         console.warn('rollDice failed', err);
         // restore ability to roll on error
@@ -236,10 +246,12 @@ export class App implements OnInit{
     }
 
     rollParenMaren(){
+      this.canRoll= false;
       this.playDiceSound();
       this.rt.rollParenMaren();
-      this.canRoll= false;
+      
       setTimeout(()=>{
+        this.canRoll = false;
         this.rt.endTurn();
       },2000)
      

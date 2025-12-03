@@ -110,8 +110,11 @@ function rollDice(roomId, playerId, _diceCount = 1, faces = 6) {
     room.canParenMaren = true;
   }else{
     room.canParenMaren = false;
+
   }
+  
   room.dice.push(roll);
+ 
 
   return room;
 }
