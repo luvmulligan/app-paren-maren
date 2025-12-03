@@ -1,3 +1,21 @@
+.app{
+h1{
+    display: flex;
+    justify-content: center;
+}
+}
+
+.lobby{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.lobby-actions{
+    display: flex;
+    gap: 1rem;
+}
 .dice-container{
     display: flex;
     justify-content: center;
@@ -11,6 +29,24 @@
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
+}
+
+.player-score {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 200px;
+    margin-bottom: 0.5rem;
+}
+
+p-progressbar {
+    height: 1rem;
+    background: black;
+    border-radius: 7px;
+    max-width: 100%;
+}
+.p-progressbar-value {
+    background: orange;
 }
 
 .multiplier-container{
@@ -34,10 +70,19 @@
 }
 
 .paren-maren-button{
-  position: relative;
-    top: 10rem;
+margin-top: 2rem;
 }
 
 .current{
     font-weight: bold;
+}
+.table{
+    min-height: 200px;
+    margin-top: 2rem;
+}
+.table-container{
+min-height: 200px;
+margin-top: 2rem;
+}
+.app{
 }

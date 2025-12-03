@@ -1,42 +1,50 @@
 <div class="app">
   <h1>{{ title() }}</h1>
 
-      <div class="player-join" *ngIf="!joined">
-    <label for="name">Name</label>
+  <section class="lobby" *ngIf="!gameCreated">
+    <div class="player-join" *ngIf="!gameCreated">
+      <p>Welcome to Paren Maren Dice Game</p>
+      <p>Please write your player name:</p>
+    <label for="name">Join as </label>
     <input id="name" type="text" [(ngModel)]="newPlayer" placeholder="Name" />
     <!-- <button (click)="joinRoom()" [disabled]="joined || !newPlayer.trim()">Unirse</button> -->
     </div>
 
-  <section class="status" *ngIf="joined">
-    <div>Room ID: <strong>{{ roomId }}</strong>
-      <!-- <button (click)="regenerateRoomId()" title="Regenerate room id">🔁</button> -->
-    </div>
+  <div class="lobby-actions">
+
+  <section *ngIf="!joinExistingRoomPressed">
+    <button (click)="gameCreated = true; createNewRoom()" [disabled]="newPlayer === ''">Create new Room</button>
   </section>
 
   <section>
-    <div>Create new room: </div>
-    <button (click)="createNewRoom()">Create Room</button>
-  </section>
-
-  <section>
-    <div>Connect to existing room: </div>
+    <button *ngIf="!joinExistingRoomPressed" (click)="joinExistingRoomPressed = true;" [disabled]="newPlayer === ''">Connect to existing room</button>
+    <div class="roomId input action" *ngIf="joinExistingRoomPressed">
     <input type="text" [(ngModel)]="joinerId" placeholder="Room ID"/> 
     <button (click)="joinRoom()">Join</button>
-  </section>
+    </div>
 
-  <section class="join">
+    <div class="back" *ngIf="joinExistingRoomPressed">
+      <button (click)="joinExistingRoomPressed = false;">Go back</button>
+    </div>
+  </section>
+  </div>
+</section>
+  <div class="status" *ngIf="gameCreated">
+    <div>Room ID: <strong>{{ roomId }}</strong>
+    </div>
+ 
+  <section class="join" *ngIf="joined">
     <div>Room host: {{hostPlayer}}</div>
 
-    <em *ngIf="joined">Connected as {{ currentPlayer() }}</em>
-    <button (click)="startGame()" *ngIf="currentPlayer() === hostPlayer && phase === 'lobby'">Start Game</button>
+    <!-- <em *ngIf="joined">Connected as {{ currentPlayer() }}</em> -->
   </section>
-
+ </div>
   <!-- <section class="lobby">
     <input type="text" placeholder="Nombre" [(ngModel)]="newPlayer" />
     <button type="button" (click)="joinRoom()" [disabled]="!newPlayer">Unirse a la sala</button>    
   </section> -->
 
-    <section class="player-list">
+    <section class="player-list" *ngIf="joined">
       <h3>Players</h3>
       <div *ngFor="let player of players" class="player-row" [class.current]="currentPlayer() === player.name">
    
@@ -45,12 +53,14 @@
           <!-- <span *ngIf="currentPlayer() === player.name" class="badge">En turno</span> -->
         </div>
         <div class="player-score">{{player.score}}</div>
+        <mat-progress-bar mode="determinate" [value]="(player.score*100)/365"></mat-progress-bar>
       </div>
     </section>
 
 
 
   <section class="dice-list">
+    <div class="table-container">
     <ng-container *ngIf="dice().length; else noDice" class="min-height">
       <div class="table">
       <div class="dice-container">
@@ -62,18 +72,23 @@
       <img [src]="blackDiceUrl" [alt]="" />
       </div>
       </div>
+       </ng-container>
+       </div>
+    <section class="actions center-content" *ngIf="phase === 'playing'">
+    <button type="button" (click)="rollDice()" [disabled]="!canRoll">Roll!</button>
+    <!-- <button type="button" (click)="leaveRoom()">Salir de la sala</button> -->
+  </section>
       <div class="paren-maren-button center-content">
         <button *ngIf="canParenMaren()" (click)="rollParenMaren()" [disabled]="!canRoll">Paren Maren</button>
       </div>
     
-    </ng-container>
+   
 
     <ng-template #noDice>
       <!-- <em>Sin tiradas</em> -->
     </ng-template>
   </section>
-    <section class="actions center-content">
-    <button type="button" (click)="rollDice()" [disabled]="!canRoll">Roll!</button>
-    <!-- <button type="button" (click)="leaveRoom()">Salir de la sala</button> -->
-  </section>
+  <div class="start-game center-content">
+    <button (click)="startGame()" *ngIf="currentPlayer() === hostPlayer && phase === 'lobby'">Start Game</button>
+</div>
 </div>

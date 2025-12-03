@@ -3,10 +3,13 @@ import { take } from 'rxjs';
 import { RealtimeService } from './realtime.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
+
+
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatProgressBarModule],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -14,11 +17,17 @@ export class App implements OnInit{
   protected readonly title = signal('paren-maren');
   protected readonly currentPlayer = signal('');
 
+  //UI variables
+  public gameCreated: boolean = false;
+  public joinExistingRoom: boolean = false;
+  public joinExistingRoomPressed: boolean = false;
+
   public dice = signal<number[]>([]);
   public last = signal<number | null>(null);
   public canParenMaren = signal<boolean | null>(false);
   public multiplier = signal<number | undefined>(1);
   public parenMarenPressed = signal<boolean | undefined>(false);
+  public diceSound = new Audio('assets/dice.mp3');
   public blackDiceUrl: string= '';
   public scores: number[] = [];
   public rollResult!: number;
@@ -53,6 +62,13 @@ export class App implements OnInit{
     }
 
     ngOnInit(){
+    // ensure audio is preloaded so play() is more reliable
+    try {
+      this.diceSound.preload = 'auto';
+      this.diceSound.load();
+    } catch (e) {
+      console.warn('Could not preload diceSound', e);
+    }
     this.rt.diceViewChanges().subscribe(d => {
       this.dice.set([...d]);
     });
@@ -187,11 +203,13 @@ export class App implements OnInit{
 
     rollDice(){
       if(this.dice().length === 4){
+        this.canRoll= false;
         this.rt.endTurn();
+      }else{
+      this.rt.rollDice().then(()=>{
+        this.playDiceSound();
+      })
       };
-      this.rt.rollDice().then((data)=>{
-        
-      });
     }
     leaveRoom(){
       this.rt.leaveRoom().then(() => {
@@ -204,11 +222,28 @@ export class App implements OnInit{
     }
 
     rollParenMaren(){
+      this.playDiceSound();
       this.rt.rollParenMaren();
+      this.canRoll= false;
       setTimeout(()=>{
         this.rt.endTurn();
       },2000)
      
+    }
+
+    // Play dice sound safely. Clone the audio element so rapid successive
+    // plays can overlap, and catch promise rejections (autoplay policies).
+    private playDiceSound(): void {
+      try {
+        const s = this.diceSound.cloneNode(true) as HTMLAudioElement;
+        s.currentTime = 0;
+        const p = s.play();
+        if (p !== undefined) {
+          p.catch(err => console.warn('diceSound play prevented', err));
+        }
+      } catch (e) {
+        console.warn('playDiceSound error', e);
+      }
     }
 
     // Utility: return a random 4-letter uppercase string for room IDs
