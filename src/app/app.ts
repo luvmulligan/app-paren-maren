@@ -14,7 +14,7 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
   styleUrl: './app.scss'
 })
 export class App implements OnInit{
-  protected readonly title = signal('paren-maren');
+  protected readonly title = signal('Paren Maren');
   protected readonly currentPlayer = signal('');
 
   //UI variables
@@ -202,14 +202,28 @@ export class App implements OnInit{
     }
 
     rollDice(){
-      if(this.dice().length === 4){
-        this.canRoll= false;
+      // Prevent multiple rapid clicks from issuing multiple roll requests
+      if (!this.canRoll) return;
+      // Lock rolling immediately to avoid duplicate requests
+      this.canRoll = false;
+
+      this.playDiceSound();
+
+      // If for some reason there are already 4 or more dice, end the turn
+      if (this.dice().length >= 4) {
         this.rt.endTurn();
-      }else{
-      this.rt.rollDice().then(()=>{
-        this.playDiceSound();
-      })
-      };
+        return;
+      }
+
+      this.rt.rollDice().then(() => {
+        // server will emit updated room/dice state and roomChanges() subscription
+        // will set `canRoll` appropriately when turn changes; if you want to re-enable
+        // the button earlier you can adjust here based on response
+      }).catch(err => {
+        console.warn('rollDice failed', err);
+        // restore ability to roll on error
+        this.canRoll = true;
+      });
     }
     leaveRoom(){
       this.rt.leaveRoom().then(() => {

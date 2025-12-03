@@ -1,4 +1,6 @@
 .app{
+    padding-left: 3rem;
+    padding-right: 3rem;
 h1{
     display: flex;
     justify-content: center;
@@ -84,5 +86,6 @@ margin-top: 2rem;
 min-height: 200px;
 margin-top: 2rem;
 }
-.app{
+.navbar{
+    height: 3rem;
 }

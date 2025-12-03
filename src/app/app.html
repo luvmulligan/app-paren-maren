@@ -1,4 +1,5 @@
 <div class="app">
+  <div class="navbar"></div>
   <h1>{{ title() }}</h1>
 
   <section class="lobby" *ngIf="!gameCreated">
@@ -16,11 +17,11 @@
     <button (click)="gameCreated = true; createNewRoom()" [disabled]="newPlayer === ''">Create new Room</button>
   </section>
 
-  <section>
+  <section *ngIf="!gameCreated">
     <button *ngIf="!joinExistingRoomPressed" (click)="joinExistingRoomPressed = true;" [disabled]="newPlayer === ''">Connect to existing room</button>
     <div class="roomId input action" *ngIf="joinExistingRoomPressed">
     <input type="text" [(ngModel)]="joinerId" placeholder="Room ID"/> 
-    <button (click)="joinRoom()">Join</button>
+    <button (click)="joinRoom(); gameCreated = true">Join</button>
     </div>
 
     <div class="back" *ngIf="joinExistingRoomPressed">
@@ -29,16 +30,14 @@
   </section>
   </div>
 </section>
-  <div class="status" *ngIf="gameCreated">
+  <!-- <div class="status" *ngIf="gameCreated">
     <div>Room ID: <strong>{{ roomId }}</strong>
     </div>
  
   <section class="join" *ngIf="joined">
-    <div>Room host: {{hostPlayer}}</div>
-
-    <!-- <em *ngIf="joined">Connected as {{ currentPlayer() }}</em> -->
+    <div>Game hosted by {{hostPlayer}}</div>
   </section>
- </div>
+ </div> -->
   <!-- <section class="lobby">
     <input type="text" placeholder="Nombre" [(ngModel)]="newPlayer" />
     <button type="button" (click)="joinRoom()" [disabled]="!newPlayer">Unirse a la sala</button>    
@@ -91,4 +90,13 @@
   <div class="start-game center-content">
     <button (click)="startGame()" *ngIf="currentPlayer() === hostPlayer && phase === 'lobby'">Start Game</button>
 </div>
+
+  <div class="status" *ngIf="gameCreated">
+    <div>Room ID: <strong>{{ roomId }}</strong>
+    </div>
+ 
+  <section class="join" *ngIf="joined">
+    <div>Game hosted by {{hostPlayer}}</div>
+  </section>
+ </div>
 </div>
