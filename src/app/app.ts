@@ -284,5 +284,14 @@ export class App implements OnInit{
       this.roomId = this.generateRoomId();
     }
 
+    copyRoomId(){
+      navigator.clipboard.writeText(this.roomId).then(() => {
+        console.log('Room ID copied to clipboard');
+      }).catch(err => {
+        console.error('Could not copy Room ID: ', err);
+      });
+    
+    }
+
 
 }

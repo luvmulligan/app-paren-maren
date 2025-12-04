@@ -106,7 +106,7 @@ p-progressbar {
         height: 7rem;
     }
     .dice-list {
-        height: 8rem;
+        height: 4rem;
     }
     .table, .table-container {
         min-height: 100px;
@@ -123,7 +123,7 @@ p-progressbar {
 }
 
 .paren-maren-button{
-margin-top: 2rem;
+margin-top: 1rem;
     width: 120px;
     border-radius: 45px;
         background: orange;
@@ -162,7 +162,7 @@ margin-top: 2rem;
     border-radius: 36px;
 }
 .join-room-button{
-    width: 165px;
+    width: 125px;
     background-color: orange;
     border-radius: 36px;
 }
@@ -172,3 +172,17 @@ margin-top: 2rem;
     gap: 1rem;
    
 }
+.back{
+ display: grid;
+    justify-content: center;
+    gap: 1rem;
+
+}
+:host ::ng-deep 
+.mdc-text-field--outlined:not(.mdc-text-field--disabled) .mat-mdc-notch-piece {
+    border-color: darkslategrey;
+    border-width: 2px;
+}
+.status{
+    position: absolute;
+bottom: 2rem;}

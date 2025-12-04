@@ -6,10 +6,15 @@
     <div class="player-join" *ngIf="!gameCreated">
       <p>Welcome to Paren Maren Dice Game</p>
       <p>Please write your player name:</p>
-    <mat-form-field class="example-full-width">
+    <!-- <mat-form-field class="example-full-width">
     <mat-label>Join as</mat-label>
     <input matInput placeholder="Name" [(ngModel)]="newPlayer">
-    </mat-form-field>    
+    </mat-form-field>     -->
+
+     <mat-form-field appearance="outline">
+    <mat-label>Join as</mat-label>
+    <input matInput placeholder="Name" [(ngModel)]="newPlayer">
+  </mat-form-field>
     <!-- <label for="name">Join as </label> -->
     <!-- <input id="name" type="text" [(ngModel)]="newPlayer" placeholder="Name" /> -->
     <!-- <button (click)="joinRoom()" [disabled]="joined || !newPlayer.trim()">Unirse</button> -->
@@ -18,19 +23,24 @@
   <div class="lobby-actions">
 
   <section *ngIf="!joinExistingRoomPressed"  class="game-creation">
-    <button matFab class="new-room-button" (click)="gameCreated = true; createNewRoom()" [disabled]="newPlayer === ''">Create new Room</button>
+    <button matButton="outlined" class="new-room-button" (click)="gameCreated = true; createNewRoom()" [disabled]="newPlayer === ''">Create room</button>
   </section>
 
   <section *ngIf="!gameCreated">
-    <button matButton="outlined" *ngIf="!joinExistingRoomPressed" (click)="joinExistingRoomPressed = true;" class="join-room-button" [disabled]="newPlayer === ''">Connect to room</button>
+    <button matButton="outlined" *ngIf="!joinExistingRoomPressed" (click)="joinExistingRoomPressed = true;" class="join-room-button" [disabled]="newPlayer === ''">Join room</button>
     <div class="roomId input action" *ngIf="joinExistingRoomPressed">
-    <input type="text" [(ngModel)]="joinerId" placeholder="Room ID"/> 
+  <mat-form-field appearance="outline">
+    <mat-label>Room ID:</mat-label>
+    <input matInput placeholder="Room ID" [(ngModel)]="joinerId" >
+  </mat-form-field>
+    <!-- <input type="text" [(ngModel)]="joinerId" placeholder="Room ID"/>  -->
 
     </div>
 
     <div class="back" *ngIf="joinExistingRoomPressed">
-      <button matFab class="go-back-button" (click)="joinExistingRoomPressed = false;"> <mat-icon>arrow_left_alt</mat-icon></button>
-      <button matFab class="join-room-button"(click)="joinRoom(); gameCreated = true">Join</button>
+      <button  matButton="outlined" class="join-room-button"(click)="joinRoom(); gameCreated = true">Join</button>
+            <button  matButton="outlined"class="go-back-button" (click)="joinExistingRoomPressed = false;"> <mat-icon>arrow_left_alt</mat-icon>Back</button>
+
     </div>
   </section>
   </div>
@@ -79,7 +89,7 @@
        </ng-container>
        </div>
     <section class="actions center-content" *ngIf="phase === 'playing'">
-    <button type="button" matFab (click)="rollDice()" [disabled]="!canRoll" class="roll-button"> Roll!</button>
+    <button type="button" matFab (click)="rollDice()" [disabled]="!canRoll" class="roll-button">Roll!</button>
 
     <!-- <button type="button" (click)="leaveRoom()">Salir de la sala</button> -->
   </section>
@@ -100,7 +110,8 @@
   <div class="status" *ngIf="gameCreated">
     <div>Room ID: <strong>{{ roomId }}</strong>
     </div>
- 
+        <button (click)="copyRoomId()" matButton="elevated">Copy<mat-icon>file_copy</mat-icon></button>
+
   <section class="join" *ngIf="joined">
     <div>Game hosted by {{hostPlayer}}</div>
   </section>
