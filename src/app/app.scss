@@ -186,3 +186,13 @@ margin-top: 2rem;
 .status{
     position: absolute;
 bottom: 2rem;}
+:host ::ng-deep .mat-mdc-outlined-button{
+     font-family: 'Barriecito', cursive;
+}
+
+:host ::ng-deep .mat-mdc-unelevated-button{
+     font-family: 'Barriecito', cursive;
+}
+:host ::ng-deep .mat-mdc-raised-button{
+        font-family: 'Barriecito', cursive;
+}
