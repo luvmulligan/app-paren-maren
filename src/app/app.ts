@@ -9,12 +9,13 @@ import {MatDividerModule} from '@angular/material/divider';
 import {MatButtonModule} from '@angular/material/button';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatChipsModule} from '@angular/material/chips';
 
 
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, MatProgressBarModule, MatButtonModule,MatIconModule,MatButtonModule, MatFormFieldModule,MatInputModule],
+  imports: [CommonModule, FormsModule, MatProgressBarModule, MatButtonModule,MatIconModule,MatButtonModule, MatFormFieldModule,MatInputModule,MatChipsModule],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -37,7 +38,7 @@ export class App implements OnInit{
   public scores: number[] = [];
   public rollResult!: number;
   public players: any[] = [];
-  public canRoll: boolean = true;
+  public canRoll: boolean = false;
   public newPlayer: string = '';
   public hostPlayer: string = '';
   public gameStarted: boolean = false;
@@ -106,7 +107,7 @@ export class App implements OnInit{
               this.hostPlayer = current?.name ?? '';
             }
             this.currentPlayer.set(current?.name ?? '');
-            if(this.newPlayer === current?.name){
+            if(this.newPlayer === current?.name ){
               this.canRoll = true;
             }else{
               this.canRoll = false;
@@ -248,12 +249,12 @@ export class App implements OnInit{
     rollParenMaren(){
       this.canRoll= false;
       this.playDiceSound();
-      this.rt.rollParenMaren();
+      this.rt.rollParenMaren().then((ack)=>{
+      })
       
       setTimeout(()=>{
-        this.canRoll = false;
         this.rt.endTurn();
-      },2000)
+      },1000)
      
     }
 

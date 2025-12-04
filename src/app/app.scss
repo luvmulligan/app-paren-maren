@@ -17,6 +17,7 @@ h1{
 .lobby-actions{
     display: flex;
     gap: 1rem;
+        margin-left: -1rem;
 }
 .dice-container{
     display: flex;
@@ -26,7 +27,12 @@ h1{
     }
 }
 .player-list{
-    display: flex;
+    position: absolute;
+    top: 1rem;
+    left: 5rem;
+        display: inline-flex;
+    gap: 0rem;
+    max-width: 124px;
     justify-content: center;
     flex-direction: column;
     align-items: center;
@@ -91,6 +97,13 @@ p-progressbar {
     .player-list {
         gap: 0.25rem;
         padding: 0.5rem;
+        left: 1rem;
+    }
+    .player-name{
+            margin-bottom: -0.8rem;
+    }
+    :host ::ng-deep .mat-mdc-progress-bar{
+        width: 50px;
     }
     .player-score {
         min-width: 120px;
@@ -108,9 +121,9 @@ p-progressbar {
     .dice-list {
         height: 4rem;
     }
-    .table, .table-container {
-        min-height: 100px;
-        margin-top: 1rem;
+    .table-container {
+          height: 140px;
+    margin-top: 2rem;
     }
     .paren-maren-button {
         margin-top: 1rem;
@@ -119,7 +132,7 @@ p-progressbar {
 
 
 .dice-list{
-    height: 15rem;
+    height: 4rem;
 }
 
 .paren-maren-button{
@@ -134,18 +147,17 @@ margin-top: 1rem;
     font-weight: bold;
 }
 .table{
-    min-height: 200px;
-    margin-top: 2rem;
+    // min-height: 200px;
+    // margin-top: 2rem;
 }
 .table-container{
-min-height: 200px;
-margin-top: 2rem;
-}
+    height: 140px;
+    margin-top: 2rem;}
 .navbar{
     height: 3rem;
 }
 .roll-button{
-        margin-top: 2rem;
+        margin-top: 1rem;
     width: 80px;
     border-radius: 45px;
     background: white;
@@ -184,8 +196,9 @@ margin-top: 2rem;
     border-width: 2px;
 }
 .status{
-    position: absolute;
-bottom: 2rem;}
+ display: grid;
+ justify-self: center
+}
 :host ::ng-deep .mat-mdc-outlined-button{
      font-family: 'Barriecito', cursive;
 }

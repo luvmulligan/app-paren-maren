@@ -2,6 +2,16 @@
   <div class="navbar"></div>
   <h1>{{ title() }}</h1>
 
+    <div class="status" *ngIf="gameCreated">
+    <div class="room-id center-content"><p>Room ID: <strong> {{ roomId }}</strong></p>
+    </div>
+        <button (click)="copyRoomId()" matButton="elevated">Copy<mat-icon>file_copy</mat-icon></button>
+
+  <!-- <section class="join" *ngIf="joined">
+    <div>Game hosted by {{hostPlayer}}</div>
+  </section> -->
+ </div>
+
   <section class="lobby" *ngIf="!gameCreated">
     <div class="player-join" *ngIf="!gameCreated">
       <p>Welcome to Paren Maren Dice Game</p>
@@ -62,12 +72,12 @@
       <h3>Players</h3>
       <div *ngFor="let player of players" class="player-row" [class.current]="currentPlayer() === player.name">
    
-        <div class="player-name">
-          {{player.name}}
+        <div class="player-name"> <p>
+          {{player.name}} <span *ngIf="hostPlayer === currentPlayer()">(Host)</span></p>
           <!-- <span *ngIf="currentPlayer() === player.name" class="badge">En turno</span> -->
         </div>
-        <div class="player-score">{{player.score}}</div>
-        <mat-progress-bar mode="determinate" [value]="(player.score*100)/365"></mat-progress-bar>
+        <div class="player-score"><mat-chip>{{player.score}}</mat-chip>        <mat-progress-bar mode="determinate" [value]="(player.score*100)/365"></mat-progress-bar></div>  
+
       </div>
     </section>
 
@@ -104,16 +114,8 @@
     </ng-template>
   </section>
   <div class="start-game center-content">
-    <button matButton="filled" class="start-game" (click)="startGame()" *ngIf="currentPlayer() === hostPlayer && phase === 'lobby'">Start Game</button>
+    <button matButton="filled" class="start-game" (click)="startGame()" *ngIf="currentPlayer() === hostPlayer && phase === 'lobby'" [disabled]="currentPlayer() !== hostPlayer">Start Game</button>
 </div>
 
-  <div class="status" *ngIf="gameCreated">
-    <div>Room ID: <strong>{{ roomId }}</strong>
-    </div>
-        <button (click)="copyRoomId()" matButton="elevated">Copy<mat-icon>file_copy</mat-icon></button>
 
-  <section class="join" *ngIf="joined">
-    <div>Game hosted by {{hostPlayer}}</div>
-  </section>
- </div>
 </div>
