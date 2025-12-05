@@ -83,6 +83,18 @@ function leaveRoom(roomId, playerId) {
     rooms.delete(roomId);
     return null;
   }
+  
+  // Si quedan menos de 2 jugadores, volver a lobby y resetear estado
+  if (room.players.size < 2 && room.phase === 'playing') {
+    room.phase = 'lobby';
+    room.dice = [];
+    room.canParenMaren = false;
+    room.parenMarenPressed = false;
+    room.multiplier = 1;
+    room.turnIndex = 0;
+    room.winner = null;
+  }
+  
   return room;
 }
 

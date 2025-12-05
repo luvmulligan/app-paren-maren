@@ -34,11 +34,13 @@ export class App implements OnInit{
   public multiplier = signal<number | undefined>(1);
   public parenMarenPressed = signal<boolean | undefined>(false);
   public diceSound = new Audio('assets/dice.mp3');
+  public sixSound = new Audio('assets/six.mp3');
   public blackDiceUrl: string= '';
   public scores: number[] = [];
   public rollResult!: number;
   public players: any[] = [];
-  public canRoll: boolean = false;
+  public canRoll: boolean = true;
+  public isEndingTurn: boolean = false;
   public newPlayer: string = '';
   public hostPlayer: string = '';
   public gameStarted: boolean = false;
@@ -72,14 +74,24 @@ export class App implements OnInit{
     try {
       this.diceSound.preload = 'auto';
       this.diceSound.load();
+      this.sixSound.preload = 'auto';
+      this.sixSound.load();
     } catch (e) {
-      console.warn('Could not preload diceSound', e);
+      console.warn('Could not preload sounds', e);
     }
     this.rt.diceViewChanges().subscribe(d => {
       this.dice.set([...d]);
     });
     this.rt.lastRollChanges().subscribe(last => {
       this.last.set(last);
+      // Reproducir sonido cuando cualquier jugador tira (last cambia de null a un número)
+      if (last !== null) {
+        if (last === 6) {
+          this.playSixSound();
+        } else {
+          this.playDiceSound();
+        }
+      }
     });
     this.rt.canParenMaren().subscribe(value =>{
       this.canParenMaren.set(value)
@@ -106,11 +118,23 @@ export class App implements OnInit{
             if(current?.id === data.hostId){
               this.hostPlayer = current?.name ?? '';
             }
+            
             this.currentPlayer.set(current?.name ?? '');
             if(this.newPlayer === current?.name ){
-              this.canRoll = true;
+              // Si vuelve a ser nuestro turno y estaba marcado como finalizando, resetearlo
+              if (this.isEndingTurn && data.dice && data.dice.length === 0) {
+                // Si los dados están vacíos significa que es un nuevo turno
+                this.isEndingTurn = false;
+              }
+              // Solo permitir rolling si no estamos finalizando el turno
+              if (!this.isEndingTurn) {
+                this.canRoll = true;
+              }
+              // Si vuelve a ser nuestro turno después de una ronda completa, resetear isEndingTurn
+              // (esto maneja el caso de que el turno vuelva a nosotros después de haber hecho Paren Maren)
             }else{
               this.canRoll = false;
+              this.isEndingTurn = false; // resetear cuando ya no es nuestro turno
             }
             this.phase = data.phase;
           } else {
@@ -152,6 +176,26 @@ export class App implements OnInit{
     } catch (e) {
       // ignore malformed JSON in storage
     }
+
+    // Escuchar cambios en la conexión para reconectar automáticamente
+    this.rt.connectionChanges().subscribe((connected: boolean) => {
+      if (connected && !this.joined) {
+        // Si el socket se reconecta y teníamos una sesión guardada, volver a unirse
+        const raw = localStorage.getItem(this.LS_KEY);
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed?.joined && parsed?.roomId) {
+              console.log('Socket reconnected, rejoining room...');
+              this.joinRoom();
+              this.gameCreated = true;
+            }
+          } catch (e) {
+            // ignore malformed JSON
+          }
+        }
+      }
+    });
     }
 
     createNewRoom(){
@@ -213,8 +257,6 @@ export class App implements OnInit{
       // Lock rolling immediately to avoid duplicate requests
       this.canRoll = false;
 
-      this.playDiceSound();
-
       // If for some reason there are already 4 or more dice, end the turn
       if (this.dice().length >= 4) {
         this.rt.endTurn();
@@ -247,13 +289,26 @@ export class App implements OnInit{
     }
 
     rollParenMaren(){
-      this.canRoll= false;
-      this.playDiceSound();
-      this.rt.rollParenMaren().then((ack)=>{
-      })
+      this.canRoll = false;
+      this.isEndingTurn = true; // Marcar que estamos finalizando el turno
+      
+      this.rt.rollParenMaren().then((ack) => {
+        // Reproducir sonido según el resultado del multiplicador
+        if (typeof ack.multiplier === 'number') {
+          if (ack.multiplier === 6) {
+            this.playSixSound();
+          } else {
+            this.playDiceSound();
+          }
+        }
+      });
       
       setTimeout(()=>{
         this.rt.endTurn();
+        // Resetear isEndingTurn después de un pequeño delay adicional para asegurar que roomChanges se procese
+        setTimeout(() => {
+          this.isEndingTurn = false;
+        }, 100);
       },1000)
      
     }
@@ -270,6 +325,20 @@ export class App implements OnInit{
         }
       } catch (e) {
         console.warn('playDiceSound error', e);
+      }
+    }
+
+    // Play six sound when rolling a 6
+    private playSixSound(): void {
+      try {
+        const s = this.sixSound.cloneNode(true) as HTMLAudioElement;
+        s.currentTime = 0;
+        const p = s.play();
+        if (p !== undefined) {
+          p.catch(err => console.warn('sixSound play prevented', err));
+        }
+      } catch (e) {
+        console.warn('playSixSound error', e);
       }
     }
 
@@ -292,6 +361,23 @@ export class App implements OnInit{
         console.error('Could not copy Room ID: ', err);
       });
     
+    }
+
+    exitRoom(){
+      const confirmExit = confirm('Are you sure you want to exit? All game progress will be lost.');
+      if (!confirmExit) return;
+      
+      this.leaveRoom();
+      this.gameCreated = false;
+      this.joined = false;
+      this.joinExistingRoomPressed = false;
+      this.dice.set([]);
+      this.last.set(null);
+      this.players = [];
+      this.phase = 'lobby';
+      this.canRoll = true;
+      this.isEndingTurn = false;
+      this.roomId = this.generateRoomId();
     }
 
 
