@@ -145,7 +145,13 @@ export class App implements OnInit{
       this.blackDiceUrl = `assets/black-dice-${mul}.png`
       const winner  = data?.winner;
       if(winner){
-        alert(`El ganador es ${winner}!`) }
+        alert(`El ganador es ${winner}!`);
+        // Cuando el juego termina, dar opción de salir o jugar de nuevo
+        const playAgain = confirm('¿Quieres jugar de nuevo?');
+        if (playAgain) {
+          this.exitRoom();
+        }
+      }
 
     })
 

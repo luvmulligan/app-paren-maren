@@ -115,7 +115,7 @@
   <div class="start-game center-content">
     <button matButton="filled" class="start-game" (click)="startGame()" *ngIf="joined && currentPlayer() === hostPlayer && phase === 'lobby'" [disabled]="currentPlayer() !== hostPlayer">Start Game</button>
 </div>
-  <button *ngIf="phase === 'playing'" (click)="exitRoom()" class="exit-button" matButton="elevated" color="warn">Exit<mat-icon class="flip-horizontal">exit_to_app</mat-icon></button>
+  <button *ngIf="phase === 'playing' || phase === 'ended'" (click)="exitRoom()" class="exit-button" matButton="elevated" color="warn">Exit<mat-icon class="flip-horizontal">exit_to_app</mat-icon></button>
 
 
 </div>
