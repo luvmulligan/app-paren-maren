@@ -34,6 +34,14 @@ export interface JoinPayload {
   createIfMissing?: boolean;
 }
 
+export interface ChatMessage {
+  playerId: string;
+  playerName: string;
+  message: string;
+  timestamp: Date;
+  isOwnMessage?: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RealtimeService implements OnDestroy {
   private socket?: Socket;
@@ -45,10 +53,13 @@ export class RealtimeService implements OnDestroy {
   private canParenMaren$ = new BehaviorSubject<boolean | null>(null);
   private parenMarenPressed$ = new BehaviorSubject<boolean | null>(false);
   private multiplier$ = new BehaviorSubject<number | null>(1);
-
+  private chatMessages$ = new BehaviorSubject<ChatMessage[]>([]);
+  private currentPlayerId?: number;
+  private currentPlayerName?: string;
 
   // Adjust the URL if your server runs elsewhere
-  private readonly serverUrl = 'https://app-paren-maren.onrender.com';
+  // private readonly serverUrl = 'https://app-paren-maren.onrender.com';
+    private readonly serverUrl = 'localhost:3000';
 
   constructor(private zone: NgZone) {}
 
@@ -110,6 +121,18 @@ export class RealtimeService implements OnDestroy {
 
     this.socket?.on('errorMessage', (msg: string) => {
       this.zone.run(() => this.lastError$.next(msg));
+    });
+
+    this.socket?.on('chatMessage', (msg: ChatMessage) => {
+      this.zone.run(() => {
+        const currentMessages = this.chatMessages$.value;
+        const messageWithFlag = {
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+          isOwnMessage: msg.playerId === String(this.currentPlayerId)
+        };
+        this.chatMessages$.next([...currentMessages, messageWithFlag]);
+      });
     });
   }
 
@@ -178,9 +201,15 @@ export class RealtimeService implements OnDestroy {
     return this.multiplier$.asObservable();
   }
 
+  chatMessages(): Observable<ChatMessage[]> {
+    return this.chatMessages$.asObservable();
+  }
+
   // Actions
   joinRoom(payload: JoinPayload): Promise<{ ok: boolean; room?: RoomDto; error?: string }> {
     this.ensureSocket();
+    this.currentPlayerId = payload.playerId;
+    this.currentPlayerName = payload.name;
     return new Promise((resolve) => {
       this.socket!.emit('joinRoom', payload, (ack: any) => {
         this.zone.run(() => {
@@ -272,12 +301,50 @@ export class RealtimeService implements OnDestroy {
             this.room$.next(null);
             this.diceView$.next([]);
             this.lastRoll$.next(null);
+            this.chatMessages$.next([]);
           }
           if (!ack?.ok && ack?.error) this.lastError$.next(ack.error);
           resolve(ack);
         });
       });
     });
+  }
+
+  sendChatMessage(message: string): void {
+    console.log('[sendChatMessage] Called with message:', message);
+    console.log('[sendChatMessage] currentPlayerId:', this.currentPlayerId);
+    console.log('[sendChatMessage] currentPlayerName:', this.currentPlayerName);
+    console.log('[sendChatMessage] socket exists:', !!this.socket);
+    console.log('[sendChatMessage] socket connected:', this.socket?.connected);
+    console.log('[sendChatMessage] socket.id:', this.socket?.id);
+    
+    this.ensureSocket();
+    
+    if (!this.currentPlayerId || !this.currentPlayerName) {
+      console.error('[sendChatMessage] ABORT: Missing currentPlayerId or currentPlayerName');
+      return;
+    }
+    
+    console.log('[sendChatMessage] Emitting to server...');
+    
+    const startTime = Date.now();
+    this.socket!.emit('sendChatMessage', { message }, (ack: any) => {
+      const elapsed = Date.now() - startTime;
+      console.log(`[sendChatMessage] Ack received after ${elapsed}ms:`, ack);
+      this.zone.run(() => {
+        if (!ack?.ok && ack?.error) {
+          this.lastError$.next(ack.error);
+          console.error('[sendChatMessage] Server returned error:', ack.error);
+        } else if (ack?.ok) {
+          console.log('[sendChatMessage] Server confirmed message sent successfully');
+        }
+      });
+    });
+    
+    // Check if ack is received within 5 seconds
+    setTimeout(() => {
+      console.warn('[sendChatMessage] WARNING: No ack received after 5 seconds - server may not be responding');
+    }, 5000);
   }
 
   private ensureSocket(): void {

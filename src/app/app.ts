@@ -10,12 +10,13 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatChipsModule} from '@angular/material/chips';
+import { ChatComponent } from './chat/chat.component';
 
 
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, MatProgressBarModule, MatButtonModule,MatIconModule,MatButtonModule, MatFormFieldModule,MatInputModule,MatChipsModule],
+  imports: [CommonModule, FormsModule, MatProgressBarModule, MatButtonModule,MatIconModule,MatButtonModule, MatFormFieldModule,MatInputModule,MatChipsModule, ChatComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

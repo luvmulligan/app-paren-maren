@@ -117,5 +117,6 @@
 </div>
   <button *ngIf="phase === 'playing' || phase === 'ended'" (click)="exitRoom()" class="exit-button" matButton="elevated" color="warn">Exit<mat-icon class="flip-horizontal">exit_to_app</mat-icon></button>
 
+  <app-chat *ngIf="gameCreated"></app-chat>
 
 </div>

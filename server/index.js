@@ -257,6 +257,63 @@ const io = new Server(server, {
 
 io.on('connection', (socket) => {
   console.log(`[socket] connected: id=${socket.id} remote=${socket.conn?.remoteAddress || 'unknown'}`);
+  
+  // Log all registered event listeners for this socket
+  console.log('[socket] Registering event listeners for socket:', socket.id);
+  
+  // Register sendChatMessage listener FIRST to ensure it's available
+  console.log('[socket] Registering sendChatMessage listener');
+  socket.on('sendChatMessage', (payload, ack) => {
+    console.log('[chat] ===== sendChatMessage event received =====');
+    console.log('[chat] Socket ID:', socket.id);
+    console.log('[chat] Payload:', payload);
+    console.log('[chat] socket.data:', socket.data);
+    
+    try {
+      const { roomId, playerId } = socket.data;
+      const { message } = payload || {};
+      
+      console.log('[chat] Extracted roomId:', roomId, 'playerId:', playerId);
+      
+      if (!roomId || !playerId) {
+        console.log('[chat] ERROR: Missing roomId or playerId');
+        throw new Error('Not in a room');
+      }
+      
+      if (!message || !message.trim()) {
+        console.log('[chat] ERROR: Message is empty');
+        throw new Error('Message is required');
+      }
+
+      const room = getRoom(roomId);
+      console.log('[chat] Room found:', roomId);
+      
+      const player = ensurePlayer(room, playerId);
+      console.log('[chat] Player found:', player.name);
+      
+      const chatMessage = {
+        playerId: String(playerId),
+        playerName: player.name,
+        message: message.trim(),
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('[chat] Chat message created:', chatMessage);
+      console.log('[chat] Sockets in room before emit:', Array.from(io.sockets.adapter.rooms.get(roomId) || []));
+      
+      io.to(roomId).emit('chatMessage', chatMessage);
+      
+      console.log('[chat] Message emitted to room:', roomId);
+      ack && ack({ ok: true });
+      console.log('[chat] Ack sent');
+    } catch (err) {
+      console.error('[chat] ERROR:', err);
+      const message = err && err.message ? err.message : 'Unknown error';
+      ack && ack({ ok: false, error: message });
+      socket.emit('errorMessage', message);
+    }
+  });
+  
   // Expected to receive: { roomId, playerId, name, createIfMissing? }
   socket.on('joinRoom', (payload, ack) => {
     try {

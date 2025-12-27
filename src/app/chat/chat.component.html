@@ -1,0 +1,39 @@
+<div class="chat-container" [class.minimized]="isMinimized()">
+  <div class="chat-header" (click)="toggleMinimize()">
+    <span class="chat-title">
+      <mat-icon>chat</mat-icon>
+      Chat
+    </span>
+    <mat-icon class="minimize-icon">{{ isMinimized() ? 'expand_less' : 'expand_more' }}</mat-icon>
+  </div>
+
+  <div class="chat-body" *ngIf="!isMinimized()">
+    <div class="messages-container" #messagesContainer>
+      <div *ngFor="let msg of messages()" class="message" [class.own-message]="msg.isOwnMessage">
+        <div class="message-header">
+          <span class="message-sender">{{ msg.playerName }}</span>
+          <span class="message-time">{{ msg.timestamp | date: 'HH:mm' }}</span>
+        </div>
+        <div class="message-content">{{ msg.message }}</div>
+      </div>
+      <div *ngIf="messages().length === 0" class="no-messages">
+        No hay mensajes aún
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <mat-form-field appearance="outline" class="message-field">
+        <input 
+          matInput 
+          [(ngModel)]="newMessage" 
+          placeholder="Escribe un mensaje..." 
+          (keypress)="onKeyPress($event)"
+          maxlength="200"
+        />
+      </mat-form-field>
+      <button mat-icon-button color="primary" (click)="sendMessage()" [disabled]="!newMessage.trim()">
+        <mat-icon>send</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>
