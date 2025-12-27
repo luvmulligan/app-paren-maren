@@ -58,8 +58,8 @@ export class RealtimeService implements OnDestroy {
   private currentPlayerName?: string;
 
   // Adjust the URL if your server runs elsewhere
-  // private readonly serverUrl = 'https://app-paren-maren.onrender.com';
-    private readonly serverUrl = 'localhost:3000';
+  private readonly serverUrl = 'https://app-paren-maren.onrender.com';
+    // private readonly serverUrl = 'localhost:3000';
 
   constructor(private zone: NgZone) {}
 
@@ -216,6 +216,16 @@ export class RealtimeService implements OnDestroy {
           if (ack?.ok && ack.room) {
             this.room$.next(ack.room);
             this.diceView$.next([...(ack.room?.dice ?? [])]);
+            
+            // Load chat history if available
+            if (ack.chatMessages && Array.isArray(ack.chatMessages)) {
+              const messagesWithFlag = ack.chatMessages.map((msg: ChatMessage) => ({
+                ...msg,
+                timestamp: new Date(msg.timestamp),
+                isOwnMessage: msg.playerId === String(this.currentPlayerId)
+              }));
+              this.chatMessages$.next(messagesWithFlag);
+            }
           } else if (!ack?.ok && ack?.error) {
             this.lastError$.next(ack.error);
           }

@@ -30,6 +30,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.chatSub = this.realtimeService.chatMessages().subscribe(messages => {
       this.messages.set(messages);
       this.shouldScrollToBottom = true;
+      // Force scroll after a short delay to ensure DOM is rendered
+      setTimeout(() => this.scrollToBottom(), 100);
     });
   }
 
@@ -66,7 +68,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   private scrollToBottom(): void {
     try {
       if (this.messagesContainer) {
-        this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
+        const element = this.messagesContainer.nativeElement;
+        element.scrollTop = element.scrollHeight;
       }
     } catch (err) {
       console.error('Error scrolling to bottom:', err);

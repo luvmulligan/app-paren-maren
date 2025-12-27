@@ -33,6 +33,7 @@ function createRoom(roomId, host) {
     canRoll: false,
     phase: 'lobby', // lobby | playing | ended
     winner: null,
+    chatMessages: [],
   };
   rooms.set(roomId, room);
   return room;
@@ -298,6 +299,10 @@ io.on('connection', (socket) => {
         timestamp: new Date().toISOString()
       };
       
+      // Store message in room history
+      if (!room.chatMessages) room.chatMessages = [];
+      room.chatMessages.push(chatMessage);
+      
       console.log('[chat] Chat message created:', chatMessage);
       console.log('[chat] Sockets in room before emit:', Array.from(io.sockets.adapter.rooms.get(roomId) || []));
       
@@ -334,7 +339,7 @@ io.on('connection', (socket) => {
       socket.join(roomId);
 
       io.to(roomId).emit('roomUpdated', snapshotRoom(room));
-      ack && ack({ ok: true, room: snapshotRoom(room) });
+      ack && ack({ ok: true, room: snapshotRoom(room), chatMessages: room.chatMessages || [] });
     } catch (err) {
       const message = err && err.message ? err.message : 'Unknown error';
       ack && ack({ ok: false, error: message });
